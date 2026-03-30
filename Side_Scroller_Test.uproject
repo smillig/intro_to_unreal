@@ -1,8 +1,18 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.7",
+	"EngineAssociation": "BA80D02D-5564-4249-8A7D-C679E23A4ED3",
 	"Category": "",
 	"Description": "",
+	"Modules": [
+		{
+			"Name": "Side_Scroller_Test",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "ModelingToolsEditorMode",

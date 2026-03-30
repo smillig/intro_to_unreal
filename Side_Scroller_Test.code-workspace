@@ -1,0 +1,604 @@
+{
+	"folders": [
+		{
+			"name": "Side_Scroller_Test",
+			"path": "."
+		},
+		{
+			"name": "UE5",
+			"path": "/home/shaun/Programs/git_unreal/UnrealEngine"
+		}
+	],
+	"settings": {
+		"typescript.tsc.autoDetect": "off",
+		"npm.autoDetect": "off",
+		"terminal.integrated.env.linux": {
+			"PATH": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/ThirdParty/DotNet/8.0.412/linux-x64:${env:PATH}",
+			"DOTNET_ROOT": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/ThirdParty/DotNet/8.0.412/linux-x64",
+			"DOTNET_HOST_PATH": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/ThirdParty/DotNet/8.0.412/linux-x64/dotnet",
+			"DOTNET_MULTILEVEL_LOOKUP": "0",
+			"DOTNET_ROLL_FORWARD": "LatestMajor"
+		}
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools",
+			"ms-dotnettools.csharp"
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Side_Scroller_Test Linux Debug Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Debug",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Debug Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Debug",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_Test Linux Debug Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Debug Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Debug",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux DebugGame Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"DebugGame",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux DebugGame Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"DebugGame",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_Test Linux DebugGame Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux DebugGame Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"DebugGame",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Development Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Development",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Development Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Development",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_Test Linux Development Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Development Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Development",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Test Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Test",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Test Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Test",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_Test Linux Test Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Test Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Test",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Shipping Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Shipping",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Shipping Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Shipping",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_Test Linux Shipping Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_Test Linux Shipping Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_Test",
+					"Linux",
+					"Shipping",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux Debug Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"Debug",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux Debug Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"Debug",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_TestEditor Linux Debug Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux Debug Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"Debug",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux DebugGame Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"DebugGame",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux DebugGame Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"DebugGame",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_TestEditor Linux DebugGame Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux DebugGame Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"DebugGame",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux Development Build",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"Development",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux Development Rebuild",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"Development",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex"
+				],
+				"problemMatcher": "$msCompile",
+				"dependsOn": [
+					"Side_Scroller_TestEditor Linux Development Clean"
+				],
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			},
+			{
+				"label": "Side_Scroller_TestEditor Linux Development Clean",
+				"group": "build",
+				"command": "Engine/Build/BatchFiles/Linux/Build.sh",
+				"args": [
+					"Side_Scroller_TestEditor",
+					"Linux",
+					"Development",
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-waitmutex",
+					"-clean"
+				],
+				"problemMatcher": "$msCompile",
+				"type": "shell",
+				"options": {
+					"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+				}
+			}
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Launch Side_Scroller_Test (Debug)",
+				"request": "launch",
+				"program": "/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Binaries/Linux/Side_Scroller_Test-Linux-Debug",
+				"preLaunchTask": "Side_Scroller_Test Linux Debug Build",
+				"args": [
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_Test (DebugGame)",
+				"request": "launch",
+				"program": "/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Binaries/Linux/Side_Scroller_Test-Linux-DebugGame",
+				"preLaunchTask": "Side_Scroller_Test Linux DebugGame Build",
+				"args": [
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_Test (Development)",
+				"request": "launch",
+				"program": "/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Binaries/Linux/Side_Scroller_Test",
+				"preLaunchTask": "Side_Scroller_Test Linux Development Build",
+				"args": [
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_Test (Test)",
+				"request": "launch",
+				"program": "/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Binaries/Linux/Side_Scroller_Test-Linux-Test",
+				"preLaunchTask": "Side_Scroller_Test Linux Test Build",
+				"args": [
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_Test (Shipping)",
+				"request": "launch",
+				"program": "/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Binaries/Linux/Side_Scroller_Test-Linux-Shipping",
+				"preLaunchTask": "Side_Scroller_Test Linux Shipping Build",
+				"args": [
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_TestEditor (Debug)",
+				"request": "launch",
+				"program": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/Linux/UnrealEditor-Linux-Debug",
+				"preLaunchTask": "Side_Scroller_TestEditor Linux Debug Build",
+				"args": [
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject"
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_TestEditor (DebugGame)",
+				"request": "launch",
+				"program": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/Linux/UnrealEditor-Linux-DebugGame",
+				"preLaunchTask": "Side_Scroller_TestEditor Linux DebugGame Build",
+				"args": [
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject"
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Launch Side_Scroller_TestEditor (Development)",
+				"request": "launch",
+				"program": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/Linux/UnrealEditor",
+				"preLaunchTask": "Side_Scroller_TestEditor Linux Development Build",
+				"args": [
+					"/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject"
+				],
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine",
+				"type": "cppdbg",
+				"visualizerFile": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Extras/VisualStudioDebugging/Unreal.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Generate Project Files",
+				"type": "coreclr",
+				"request": "launch",
+				"preLaunchTask": "UnrealBuildTool Linux Development Build",
+				"program": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Build/BatchFiles/RunUBT.bat",
+				"args": [
+					"-projectfiles",
+					"-vscode",
+					"-project=/home/shaun/Documents/Unreal Projects/Side_Scroller_Test/Side_Scroller_Test.uproject",
+					"-game",
+					"-engine",
+					"-dotnet"
+				],
+				"env": {
+					"PATH": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/ThirdParty/DotNet/8.0.412/linux-x64:${env:PATH}",
+					"DOTNET_ROOT": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/ThirdParty/DotNet/8.0.412/linux-x64",
+					"DOTNET_HOST_PATH": "/home/shaun/Programs/git_unreal/UnrealEngine/Engine/Binaries/ThirdParty/DotNet/8.0.412/linux-x64/dotnet",
+					"DOTNET_MULTILEVEL_LOOKUP": "0",
+					"DOTNET_ROLL_FORWARD": "LatestMajor"
+				},
+				"console": "internalConsole",
+				"internalConsoleOptions": "openOnSessionStart",
+				"stopAtEntry": false,
+				"cwd": "/home/shaun/Programs/git_unreal/UnrealEngine"
+			}
+		]
+	}
+}
