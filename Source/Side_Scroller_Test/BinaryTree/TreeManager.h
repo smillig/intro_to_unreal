@@ -27,6 +27,8 @@ public:
 	float VerticalSpacing = 150.0f;
 	
 	// The Mesh for the nodes to use (assign in Blueprint)
+	UPROPERTY(EditAnywhere, Category="Tree Settings")
+	class UStaticMesh* NodeMesh;
 	void AddValue(int32 Value);
 
 protected:

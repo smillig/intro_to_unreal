@@ -15,6 +15,8 @@ class SIDE_SCROLLER_TEST_API ATreeNode : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ATreeNode();
+
+	void Init(int32 Val);
 	
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* StaticMesh;

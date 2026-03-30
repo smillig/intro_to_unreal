@@ -36,7 +36,7 @@ ATreeNode* ATreeManager::RecursiveInsert(ATreeNode* CurrentNode, int32 Value, FV
 		if (NewNode)
 		{
 			NewNode->Init(Value);
-			if (NodeMesh) NewNode->Mesh->SetStaticMesh(NodeMesh);
+			if (NodeMesh) NewNode->StaticMesh->SetStaticMesh(NodeMesh);
 		}
 		return NewNode;
 	}
@@ -45,7 +45,7 @@ ATreeNode* ATreeManager::RecursiveInsert(ATreeNode* CurrentNode, int32 Value, FV
 	if (Value < CurrentNode->NodeValue)
 	{
 		FVector LeftLoc = Location + FVector(0, -HorizontalSpacing / Depth, -VerticalSpacing);
-		CurrentNode->LeftChild = RecursiveInsert(CurrentNode->LeftChild, Value, LeftLoc, Depth + 1);
+		CurrentNode->Left = RecursiveInsert(CurrentNode->Left, Value, LeftLoc, Depth + 1);
         
 		// Visual connection line
 		DrawDebugLine(GetWorld(), Location, LeftLoc, FColor::Green, true, -1, 0, 5.0f);
@@ -53,7 +53,7 @@ ATreeNode* ATreeManager::RecursiveInsert(ATreeNode* CurrentNode, int32 Value, FV
 	else
 	{
 		FVector RightLoc = Location + FVector(0, HorizontalSpacing / Depth, -VerticalSpacing);
-		CurrentNode->RightChild = RecursiveInsert(CurrentNode->RightChild, Value, RightLoc, Depth + 1);
+		CurrentNode->Right = RecursiveInsert(CurrentNode->Right, Value, RightLoc, Depth + 1);
 
 		DrawDebugLine(GetWorld(), Location, RightLoc, FColor::Red, true, -1, 0, 5.0f);
 	}
