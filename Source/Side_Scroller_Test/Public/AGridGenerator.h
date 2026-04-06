@@ -22,13 +22,24 @@ struct FGridCell
 	GENERATED_BODY()
 
 	UPROPERTY()
-	ECellType CellType = ECellType::Flat;
+	ECellType CellType = ECellType::Empty;
 
 	UPROPERTY()
 	float ZOffset = 0.0f;
 
 	UPROPERTY()
 	float YawRotation = 0.0f;
+
+	// Tiles where snake can't turn (Tunnels and Bridges)
+	UPROPERTY()
+	bool bIsForcedPath = false;
+
+	// Locked tragectory if ForcedPath
+	UPROPERTY()
+	FVector ForcedDir = FVector::ZeroVector;
+
+	// layer helper
+	int32 Layer = 0;
 };
 
 
@@ -66,8 +77,11 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UInstancedStaticMeshComponent* RampISMC;
 
-	// UPROPERTY(VisibleAnywhere)
-	// UInstancedStaticMeshComponent* BridgeISMC;
+	UPROPERTY(VisibleAnywhere)
+	UInstancedStaticMeshComponent* TunnelISMC;
+
+	UPROPERTY(VisibleAnywhere)
+	UInstancedStaticMeshComponent* BridgeISMC;
 
 protected:
 	// Called when the game starts or when spawned
@@ -85,6 +99,6 @@ public:
 	void TryPlaceHole();
 
 	// Helper functions for indexing and 2D to 1D conversion
-	int32 GetIndex(int32 Xpos, int32 Ypos) const { return Ypos * Width + Xpos; }
+	int32 GetIndex(int32 Xpos, int32 Ypos, int32 Zpos) const { return (Zpos * Width * Height) + (Ypos * Width) + Xpos; }
 	bool IsInBounds(int32 Xpos, int32 Ypos) const { return Xpos >= 0 && Xpos < Width && Ypos >= 0 && Ypos < Height; }
 };

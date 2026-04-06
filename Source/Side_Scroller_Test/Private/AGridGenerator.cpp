@@ -12,6 +12,24 @@ AAGridGenerator::AAGridGenerator()
 	FloorISMC = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("FloorISMC"));
 	RampISMC = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("RampISMC"));
 	WallISMC = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("WallISMC"));
+	TunnelISMC = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TunnelISMC"));
+	BridgeISMC = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BridgeISMC"));
+
+	TArray<UInstancedStaticMeshComponent*> AllComponents = { FloorISMC, RampISMC, WallISMC, TunnelISMC, BridgeISMC };
+
+    for (UInstancedStaticMeshComponent* Comp : AllComponents)
+    {
+        if (Comp)
+        {
+            Comp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            Comp->SetCollisionObjectType(ECC_WorldStatic);
+            Comp->SetCollisionResponseToAllChannels(ECR_Block);
+            
+            // Set the RootComponent if it's the first one
+            if (Comp == FloorISMC) { SetRootComponent(Comp); }
+            else { Comp->SetupAttachment(RootComponent); }
+        }
+    }
 }
 
 void AAGridGenerator::OnConstruction(const FTransform& Transform)
@@ -23,7 +41,8 @@ void AAGridGenerator::OnConstruction(const FTransform& Transform)
 void AAGridGenerator::GenerateGrid()
 {
 	ClearGrid();
-	GridData.Init(FGridCell(), Width * Height);
+	// Multiplied by 3 for lower, mid and upper play areas.
+	GridData.Init(FGridCell(), Width * Height * 3);
 
 	// Feature density calcualtions done here.
 	int32 FeatureCount = (Width * Height) / 100; // perhaps density could be constrained from 10 to 50%
@@ -90,7 +109,8 @@ void AAGridGenerator::TryPlaceBridge()
 
 	// Place ramp up
 	GridData[GetIndex(StartX, StartY)].CellType = ECellType::RampUp;
-	GridData[GetIndex(StartX, StartY)].YawRotation = 0.0f;
+	GridData[GetIndex(StartX, StartY)].YawRotation = 90.0f;
+	GridData[GetIndex(StartX, StartY)].ZOffset = TileSize;
 
 	// Place Mid Sections
 	for (int i = 1; i <= MidLength; i++)
@@ -102,7 +122,8 @@ void AAGridGenerator::TryPlaceBridge()
 
 	// Place ramp down
 	GridData[GetIndex(StartX + MidLength + 1, StartY)].CellType = ECellType::RampDown;
-	GridData[GetIndex(StartX + MidLength + 1, StartY)].YawRotation = 180.0f;
+	GridData[GetIndex(StartX + MidLength + 1, StartY)].YawRotation = -90.0f;
+	GridData[GetIndex(StartX + MidLength + 1, StartY)].ZOffset = TileSize;
 }
 
 void AAGridGenerator::ClearGrid()
