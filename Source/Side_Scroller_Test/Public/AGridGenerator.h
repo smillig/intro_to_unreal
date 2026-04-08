@@ -57,6 +57,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	int32 Height = 20;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
+	int32 MapSeed = 12345;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	float TileSize = 100.0f;
@@ -87,10 +90,12 @@ protected:
 	// Called when the game starts or when spawned
 	// virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginPlay() override;
 
 public:	
 	// Called every frame
 	// virtual void Tick(float DeltaTime) override;
+	const int32 TotalLayers = 3;
 	TArray<FGridCell> GridData;
 
 	void GenerateGrid();

@@ -38,18 +38,34 @@ void AAGridGenerator::OnConstruction(const FTransform& Transform)
 	GenerateGrid();
 }
 
+void AAGridGenerator::BeginPlay()
+{
+	Super::BeginPlay();
+	GenerateGrid();
+}
+
 void AAGridGenerator::GenerateGrid()
 {
+	// use random seed for testing and replayability
+	FRandomStream GridStream(MapSeed);
 	ClearGrid();
 	// Multiplied by 3 for lower, mid and upper play areas.
-	GridData.Init(FGridCell(), Width * Height * 3);
+	GridData.Init(FGridCell(), Width * Height * TotalLayers);
 
 	// Feature density calcualtions done here.
 	int32 FeatureCount = (Width * Height) / 100; // perhaps density could be constrained from 10 to 50%
 	if (BridgeDensity == EGridDensity::Low) FeatureCount /= 2;
 	else if (BridgeDensity == EGridDensity::High) FeatureCount *= 2;
 	else if (BridgeDensity == EGridDensity::Off) FeatureCount = 0;
-
+	
+	// Populate base grid
+	for (int32 y = 0; y < Height; y++)
+	{
+		for (int32 x = 0; x < Width; x++)
+		{
+			GridData[GetIndex(x, y, 0)].CellType = ECellType::Flat;
+		}
+	}
 	// Randomly place Features
 	for (int32 i = 0; i < (FeatureCount / 2); i++)
 	{
@@ -61,30 +77,40 @@ void AAGridGenerator::GenerateGrid()
 	// }
 
 	// render the grid
-	for (int32 y = 0; y < Height; y++)
+	for (int32 z = 0; z < TotalLayers; z++)
 	{
-		for (int32 x = 0; x < Width; x++)
+		for (int32 y = 0; y < Height; y++)
 		{
-			FGridCell& Cell = GridData[GetIndex(x, y)];
-			FTransform CurrentTransform;
-			CurrentTransform.SetLocation(FVector(x * TileSize, y * TileSize, Cell.ZOffset));
-			CurrentTransform.SetRotation(FQuat(FRotator(0.0f, Cell.YawRotation, 0.0f)));
-
-			switch (Cell.CellType)
+			for (int32 x = 0; x < Width; x++)
 			{
-				// Probably need to add a Bridge and move elevated
-				case ECellType::Flat:
-				case ECellType::Elevated:
-				case ECellType::Hole:
-					FloorISMC->AddInstance(CurrentTransform);
-					break;
-				case ECellType::RampUp:
-				case ECellType::RampDown:
-					RampISMC->AddInstance(CurrentTransform);
-					break;
-				case ECellType::Blocked:
-					WallISMC->AddInstance(CurrentTransform);
-					break;
+				FGridCell& Cell = GridData[GetIndex(x, y, z)];
+				FTransform CurrentTransform;
+				CurrentTransform.SetLocation(FVector(x * TileSize, y * TileSize, Cell.ZOffset));
+				CurrentTransform.SetRotation(FQuat(FRotator(0.0f, Cell.YawRotation, 0.0f)));
+				
+				
+				switch (Cell.CellType)
+				{
+					// Probably need to add a Bridge and move elevated
+					case ECellType::Flat:
+						FloorISMC->AddInstance(CurrentTransform);
+                    	break;
+					case ECellType::Elevated:
+						BridgeISMC->AddInstance(CurrentTransform);
+						break;
+					case ECellType::Hole:
+						TunnelISMC->AddInstance(CurrentTransform);
+						break;
+					case ECellType::RampUp:
+					case ECellType::RampDown:
+						RampISMC->AddInstance(CurrentTransform);
+						break;
+					case ECellType::Blocked:
+						WallISMC->AddInstance(CurrentTransform);
+						break;
+					case ECellType::Empty:
+						{}
+				}
 			}
 		}
 	}
@@ -104,26 +130,31 @@ void AAGridGenerator::TryPlaceBridge()
 	// Check if path is clear
 	for (int i = 0; i < MidLength + 2; i++)
 	{
-		if (GridData[GetIndex(StartX + i, StartY)].CellType != ECellType::Flat) return;
+		if (GridData[GetIndex(StartX + i, StartY, 1)].CellType != ECellType::Flat) return;
 	}
 
 	// Place ramp up
-	GridData[GetIndex(StartX, StartY)].CellType = ECellType::RampUp;
-	GridData[GetIndex(StartX, StartY)].YawRotation = 90.0f;
-	GridData[GetIndex(StartX, StartY)].ZOffset = TileSize;
+	GridData[GetIndex(StartX, StartY, 1)].CellType = ECellType::RampUp;
+	GridData[GetIndex(StartX, StartY, 1)].YawRotation = 90.0f;
+	GridData[GetIndex(StartX, StartY, 1)].ZOffset = TileSize;
 
 	// Place Mid Sections
 	for (int i = 1; i <= MidLength; i++)
 	{
-		FGridCell& MidCell = GridData[GetIndex(StartX + i, StartY)];
+		FGridCell& MidCell = GridData[GetIndex(StartX + i, StartY, 2)];
 		MidCell.CellType = ECellType::Elevated;
 		MidCell.ZOffset = TileSize;
 	}
 
 	// Place ramp down
-	GridData[GetIndex(StartX + MidLength + 1, StartY)].CellType = ECellType::RampDown;
-	GridData[GetIndex(StartX + MidLength + 1, StartY)].YawRotation = -90.0f;
-	GridData[GetIndex(StartX + MidLength + 1, StartY)].ZOffset = TileSize;
+	GridData[GetIndex(StartX + MidLength + 1, StartY, 1)].CellType = ECellType::RampDown;
+	GridData[GetIndex(StartX + MidLength + 1, StartY, 1)].YawRotation = -90.0f;
+	GridData[GetIndex(StartX + MidLength + 1, StartY, 1)].ZOffset = TileSize;
+}
+
+void AAGridGenerator::TryPlaceHole()
+{
+	
 }
 
 void AAGridGenerator::ClearGrid()
@@ -131,10 +162,7 @@ void AAGridGenerator::ClearGrid()
 	FloorISMC->ClearInstances();
 	RampISMC->ClearInstances();
 	WallISMC->ClearInstances();
+	BridgeISMC->ClearInstances();
+	TunnelISMC->ClearInstances();
 	GridData.Empty();
 }
-
-void AAGridGenerator::TryPlaceHole()
-{
-}
-
