@@ -132,6 +132,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
+	TArray<FIntPoint> GetOccupiedCells();
+	
 	// For hooking in blueprints when eating food
 	UFUNCTION(BlueprintCallable)
 	void AddSegment();

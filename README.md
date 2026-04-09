@@ -29,7 +29,27 @@ Unreal version 5.7.4
        - hazards
        - arena size
      - Data driven stage progression reccommended.
-## Next Steps:
+
+## Completed:
+    Sprint 1 objectives:
+    - Snake pawn
+    - Basic snake movement on grid
+    - Basic grid generation
+
+## In Progress:
+    Sprint 2 objectives:
+    - Core snake loop
+        - Snake can move, eat, grow and die
+            - Create spawner for food
+            - Create Manager for game score and management
+    - Collision model
+        - Hybrid collision model
+            - Walls and other grid items (bridges and ramps); managed by grid
+            - Unreal collisions for self collision and food (self collisions might be handled in grid as well)
+    - State Flow and UI
+        - Basic state machine for MainMenu, Game and Outro
+
+## Overall Steps:
 1. Single-player snake: movement, growth, food, and death
 2. State machine: MainMenu, Game, Outro
 3. Stage progression: at least 3 stages, ideally data-driven

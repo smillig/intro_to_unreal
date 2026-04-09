@@ -50,9 +50,9 @@ void ASnakePawn::BeginPlay()
 {
 	Super::BeginPlay();
 	// debugging
-	if (GridGen) {
-		UE_LOG(LogTemp, Warning, TEXT("Grid initialized with %d cells"), GridGen->GridData.Num());
-	}
+	// if (GridGen) {
+	// 	UE_LOG(LogTemp, Warning, TEXT("Grid initialized with %d cells"), GridGen->GridData.Num());
+	// }
 	// Find the Grid Generator in the level
 	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass());
 	GridGen = Cast<AAGridGenerator>(FoundActor);
@@ -148,6 +148,16 @@ void ASnakePawn::GridMove(float DeltaTime)
 
 	if (Alpha >= 1.f)
 	{
+		// Update Segment logic positions
+		for (int32 i = SegmentLocations.Num() - 1; i > 0; i--) {
+			SegmentLocations[i] = SegmentLocations[i - 1];
+		}
+		SegmentLocations[0] = StepStartWorldLocation; // Where the head just came from
+
+		// Update the actual Mesh components to match SegmentLocations
+		for (int32 i = 0; i < BodyParts.Num(); i++) {
+			BodyParts[i]->SetWorldLocation(SegmentLocations[i]);
+		}
 		// We've reached the target grid location
 		CurrentGridLocation = PendingNextGridLocation;
 		
@@ -264,11 +274,11 @@ FVector ASnakePawn::GetVectorFromDirection(const ESnakeDirection Direction) cons
 {
 	switch (Direction)
 	{
-	case ESnakeDirection::Up:		return FVector::ForwardVector;  // +X
-	case ESnakeDirection::Down:		return -FVector::ForwardVector; // -X
-	case ESnakeDirection::Left:		return -FVector::RightVector;   // -Y
-	case ESnakeDirection::Right:	return FVector::RightVector;    // +Y
-	default:						return FVector::ZeroVector;     // Should never happen, but we return zero just in case
+		case ESnakeDirection::Up:		return FVector::ForwardVector;  // +X
+		case ESnakeDirection::Down:		return -FVector::ForwardVector; // -X
+		case ESnakeDirection::Left:		return -FVector::RightVector;   // -Y
+		case ESnakeDirection::Right:	return FVector::RightVector;    // +Y
+		default:						return FVector::ZeroVector;     // Should never happen, but we return zero just in case
 	}
 }
 
@@ -298,14 +308,14 @@ void ASnakePawn::UpdateDirection(ESnakeDirection NewDirection)
 {
 	switch (NewDirection)
 	{
-	case ESnakeDirection::Up:	SetActorRotation(FRotator(0.f, 0.f, 0.f));
-		break;
-	case ESnakeDirection::Down:	SetActorRotation(FRotator(0.f, 180.f, 0.f));
-		break;
-	case ESnakeDirection::Left:	SetActorRotation(FRotator(0.f, -90.f, 0.f));
-		break;
-	case ESnakeDirection::Right:SetActorRotation(FRotator(0.f, 90.f, 0.f));
-		break;
+		case ESnakeDirection::Up:	SetActorRotation(FRotator(0.f, 0.f, 0.f));
+			break;
+		case ESnakeDirection::Down:	SetActorRotation(FRotator(0.f, 180.f, 0.f));
+			break;
+		case ESnakeDirection::Left:	SetActorRotation(FRotator(0.f, -90.f, 0.f));
+			break;
+		case ESnakeDirection::Right:SetActorRotation(FRotator(0.f, 90.f, 0.f));
+			break;
 	}
 }
 
@@ -315,7 +325,7 @@ void ASnakePawn::HandleDirectionChange()
 	{
 		CurrentDirection = RequestedDirection;
 		UpdateDirection(CurrentDirection);
-		UE_LOG(LogTemp, Warning, TEXT("Direction changed to: %s"), *UEnum::GetValueAsString(CurrentDirection));
+		// UE_LOG(LogTemp, Warning, TEXT("Direction changed to: %s"), *UEnum::GetValueAsString(CurrentDirection));
 	}
 }
 FIntPoint ASnakePawn::DirectionToGridOffset(ESnakeDirection Direction) const
@@ -369,7 +379,7 @@ void ASnakePawn::HandleSnakeDeath()
 	}
 
 	bIsDead = true;
-	UE_LOG(LogTemp, Warning, TEXT("Snake has hit a wall and died!"));
+	// UE_LOG(LogTemp, Warning, TEXT("Snake has hit a wall and died!"));
 
 	// Pauses for a moment, then reset snake to starting position and direction for now:
 	// We can do a delay and call the ResetSnake method like this:
@@ -401,6 +411,19 @@ FIntPoint ASnakePawn::GetClampedStartGridPosition() const
 		FMath::Clamp(0, 1, GridGen->Width - 2),
 		FMath::Clamp(0, 1, GridGen->Height - 2)
 	);
+}
+
+TArray<FIntPoint> ASnakePawn::GetOccupiedCells()
+{
+	TArray<FIntPoint> OccupiedCells;
+	for (const FVector& Loc : SegmentLocations)
+	{
+		OccupiedCells.Add(FIntPoint(
+			FMath::RoundToInt(Loc.X / TileSize),
+			FMath::RoundToInt(Loc.Y / TileSize)
+		));
+	}
+	return OccupiedCells;
 }
 
 void ASnakePawn::DrawDebugInfo()

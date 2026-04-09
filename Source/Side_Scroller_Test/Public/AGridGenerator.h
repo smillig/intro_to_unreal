@@ -106,4 +106,6 @@ public:
 	// Helper functions for indexing and 2D to 1D conversion
 	int32 GetIndex(int32 Xpos, int32 Ypos, int32 Zpos) const { return (Zpos * Width * Height) + (Ypos * Width) + Xpos; }
 	bool IsInBounds(int32 Xpos, int32 Ypos) const { return Xpos >= 0 && Xpos < Width && Ypos >= 0 && Ypos < Height; }
+	
+	TArray<FIntPoint> GetWalkableCells(int32 Layer) const;
 };

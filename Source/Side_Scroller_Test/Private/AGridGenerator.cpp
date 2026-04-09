@@ -166,3 +166,23 @@ void AAGridGenerator::ClearGrid()
 	TunnelISMC->ClearInstances();
 	GridData.Empty();
 }
+
+TArray<FIntPoint> AAGridGenerator::GetWalkableCells(int32 Layer) const
+{
+	TArray<FIntPoint> WalkableCells;
+	for (int32 y = 0; y < Height; y++)
+	{
+		for (int32 x = 0; x < Width; x++)
+		{
+			int32 CurIndex = GetIndex(x, y, Layer);
+			if (GridData.IsValidIndex(CurIndex))
+			{
+				if (GridData[CurIndex].CellType == ECellType::Flat || GridData[CurIndex].CellType == ECellType::Elevated)
+				{
+					WalkableCells.Add(FIntPoint(x, y));
+				}
+			}
+		}
+	}
+	return WalkableCells;
+}
