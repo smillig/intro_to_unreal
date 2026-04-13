@@ -103,6 +103,13 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	float MoveInterpolationProgress = 0.f;
+	// Snake Smoothing
+	// History of where the snake has been so we can smoothly move between segments
+	TArray<FVector> SnakeHistory;
+	// Number of world units between history segments - Lower number = smoother but consumes more memory
+	float HistoryDistanceThreshold = 2.5f;
+	// How many times each segment is divided for smoothing between segments (TileSize / HistoryDistanceThreshold) default 100/5 = 20
+	int32 PointsPerSegment = 40;
 	bool bIsMovingToTarget = false;
 	bool bIsDead = false;
 	FTimerHandle ResetTimerHandle;
@@ -119,6 +126,7 @@ protected:
 	void HandleDirectionChange();
 	void UpdateDirection(ESnakeDirection NewDirection);
 	bool IsValidTurn(ESnakeDirection NewDirection) const;
+	void UpdateBodyVisuals();
 	void DrawDebugInfo();
 
 	bool WouldHitWall(const FIntPoint& NextCell) const;
