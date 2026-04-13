@@ -10,6 +10,8 @@
 class USphereComponent;
 class UStaticMeshComponent;
 class USpringArmComponent;
+class USplineComponent;
+class USplineMeshComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
@@ -55,6 +57,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
 	UStaticMesh* TailMeshAsset;
+
+	UPROPERTY(VisibleAnywhere, Category = "Snake Visuals")
+	USplineComponent* SnakeSpline;
+
+	UPROPERTY()
+	TArray<USplineMeshComponent*> SplineMeshParts;
 	
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputMappingContext* SnakeMappingContext;
@@ -103,13 +111,6 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	float MoveInterpolationProgress = 0.f;
-	// Snake Smoothing
-	// History of where the snake has been so we can smoothly move between segments
-	TArray<FVector> SnakeHistory;
-	// Number of world units between history segments - Lower number = smoother but consumes more memory
-	float HistoryDistanceThreshold = 2.5f;
-	// How many times each segment is divided for smoothing between segments (TileSize / HistoryDistanceThreshold) default 100/5 = 20
-	int32 PointsPerSegment = 40;
 	bool bIsMovingToTarget = false;
 	bool bIsDead = false;
 	FTimerHandle ResetTimerHandle;
@@ -126,7 +127,6 @@ protected:
 	void HandleDirectionChange();
 	void UpdateDirection(ESnakeDirection NewDirection);
 	bool IsValidTurn(ESnakeDirection NewDirection) const;
-	void UpdateBodyVisuals();
 	void DrawDebugInfo();
 
 	bool WouldHitWall(const FIntPoint& NextCell) const;
@@ -134,6 +134,7 @@ protected:
 	void HandleSnakeDeath();
 	FIntPoint GetClampedStartGridPosition() const;
 	void GridMove(const float DeltaTime);
+	void UpdateSplineVisuals();
 	void CheckLayerTransition(int32 TargetX, int32 TargetY);
 
 public:	

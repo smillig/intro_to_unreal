@@ -3,10 +3,11 @@
 
 #include "SnakePawn.h"
 #include "AGridGenerator.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
@@ -93,13 +94,6 @@ void ASnakePawn::BeginPlay()
 		}
 	}
 	
-	// get history started
-	int32 InitialHistory = (BodyParts.Num() + 1) * PointsPerSegment;
-	for (int32 i = 0; i < InitialHistory; i++)
-	{
-		SnakeHistory.Add(SpawnLocation);
-	}
-	
 	// player starts moving immediatly
 	bIsMovingToTarget = false;
 	MoveTimer = MoveInterval;
@@ -117,20 +111,9 @@ void ASnakePawn::Tick(float DeltaTime)
 	
 	// breadcrumbs for snake history
 	FVector CurrentLocation = GetActorLocation();
-	
-	if (SnakeHistory.Num() == 0 || FVector::Dist(CurrentLocation, SnakeHistory[0]) >= HistoryDistanceThreshold)
-	{
-		SnakeHistory.Insert(CurrentLocation, 0);
-		// trim history
-		int32 MaxHistoryNeeded = (BodyParts.Num() + 1) * PointsPerSegment;
-		if (SnakeHistory.Num() > MaxHistoryNeeded + 2)
-		{
-			SnakeHistory.Pop();
-		}
-	}
-	
-	UpdateBodyVisuals();
     
+	UpdateSplineVisuals();
+	
 	if (bIsDrawDebugInfo) DrawDebugInfo();
 
 }
@@ -178,33 +161,8 @@ void ASnakePawn::GridMove(float DeltaTime)
 		}
 		SegmentLocations[0] = StepStartWorldLocation; // Where the head just came from
 
-		// Update the actual Mesh components to match SegmentLocations
-		// for (int32 i = 0; i < BodyParts.Num(); i++) {
-		// 	BodyParts[i]->SetWorldLocation(SegmentLocations[i]);
-		// 	if (i >= 1)
-		// 	{
-		// 		if (SegmentLocations[i-1].X != SegmentLocations[i].X)
-		// 		{
-		// 			BodyParts[i]->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
-		// 		}
-		// 		else if (SegmentLocations[i-1].Y != SegmentLocations[i].Y)
-		// 		{
-		// 			BodyParts[i]->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
-		// 		}
-		// 	}
-		// 	else
-		// 	{
-		// 		if (SegmentLocations[i+1].X != SegmentLocations[i].X)
-		// 		{
-		// 			BodyParts[i]->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
-		// 		}
-		// 		else if (SegmentLocations[i+1].Y != SegmentLocations[i].Y)
-		// 		{
-		// 			BodyParts[i]->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
-		// 		}
-		// 	}
-		// }
-		// We've reached the target grid location
+		
+		// reached the target grid location
 		CurrentGridLocation = PendingNextGridLocation;
 		
 		bIsMovingToTarget = false; // We're now at the target, so we can start the process again on the next tick
@@ -437,7 +395,6 @@ void ASnakePawn::ResetSnake()
 	const FIntPoint SpawnCell = GetClampedStartGridPosition();
 	CurrentGridLocation = SpawnCell;
 	PendingNextGridLocation = SpawnCell;
-	SnakeHistory.Empty();
 
 	CurrentDirection = ESnakeDirection::Right;
 	RequestedDirection = ESnakeDirection::Right;
@@ -501,39 +458,33 @@ void ASnakePawn::DrawDebugInfo()
 	DrawDebugDirectionalArrow(GetWorld(), RightStart, RightEnd, 50.f, FColor::Red, false, -1.f, 0, 3.0f);
 }
 
-void ASnakePawn::UpdateBodyVisuals()
+void ASnakePawn::UpdateSplineVisuals()
 {
-	for (int32 i = 0; i < BodyParts.Num(); i++)
+	// add splines
+	while (SplineMeshParts.Num() < SegmentLocations.Num())
 	{
-		// calculate which index in history belongs to which segment, i.e. 0 is neck etc...
-		int32 HistoryIndex = (i + 1) * PointsPerSegment;
-		
-		if (SnakeHistory.IsValidIndex(HistoryIndex))
-		{
-			FVector DesiredPosition = SnakeHistory[HistoryIndex];
-			BodyParts[i]->SetWorldLocation(DesiredPosition);
-			
-			// point segment at the one before it
-			FVector TargetForRotation;
-			if (i == 0)
-			{
-				TargetForRotation = GetActorLocation();
-			}
-			else
-			{
-				int32 PreviousHistoryIndex = i * PointsPerSegment;
-				TargetForRotation = SnakeHistory[PreviousHistoryIndex];
-			}
-			
-			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(DesiredPosition, TargetForRotation);
-			
-			// body segment static meshes need to be rotated 90 degrees
-			FQuat OffsetQuat = FQuat(FRotator(0, 90, 0));
-			BodyParts[i]->SetWorldRotation(LookAtRotation.Quaternion() * OffsetQuat);
-			
-			// animation fun squash and stretch
-			float ActualDistance = FVector::Dist(DesiredPosition, TargetForRotation);
-			BodyParts[i]->SetWorldScale3D(FVector(1.0f, ActualDistance / TileSize, 1.0f));
-		}
+		USplineMeshComponent* NewMesh = NewObject<USplineMeshComponent>(this);
+		NewMesh->SetStaticMesh(BodyMeshAsset);
+		NewMesh->SetMobility(EComponentMobility::Movable);
+		NewMesh->RegisterComponent();
+		NewMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		SplineMeshParts.Add(NewMesh);
+	}
+	// position along spline
+	for (int32 i = 0; i < SplineMeshParts.Num(); i++)
+	{
+		USplineMeshComponent* SplineMeshComp = SplineMeshParts[i];
+
+		// find start and end of segment on the spline
+		float StartDist = i * TileSize;
+		float EndDist = (i + 1) * TileSize;
+
+		FVector StartPos = SnakeSpline->GetLocationAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
+		FVector StartTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
+		FVector EndPos = SnakeSpline->GetLocationAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
+		FVector EndTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
+
+		// deforms the mesh
+		SplineMeshComp->SetStartAndEnd(StartPos, StartTangent, EndPos, EndTangent, true);
 	}
 }
