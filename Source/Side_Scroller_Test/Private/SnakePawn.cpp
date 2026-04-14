@@ -45,6 +45,10 @@ ASnakePawn::ASnakePawn()
 
 	MoveTimer = 0.0f;
 
+	SnakeSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SnakeSpline"));
+	SnakeSpline->SetupAttachment(RootComponent);
+	// sets so location is updated through UpdateSplineVisuals
+	SnakeSpline->SetUsingAbsoluteLocation(true);
 }
 
 // Called when the game starts or when spawned
@@ -94,6 +98,13 @@ void ASnakePawn::BeginPlay()
 		}
 	}
 	
+	CurrentDirection = ESnakeDirection::Up;
+	RequestedDirection = ESnakeDirection::Up;
+	SetActorRotation(FRotator(0.f, -90.f, 0.f));
+	HeadStartRotation = GetActorRotation();
+	HeadTargetRotation = GetActorRotation();
+	HandleDirectionChange();
+	
 	// player starts moving immediatly
 	bIsMovingToTarget = false;
 	MoveTimer = MoveInterval;
@@ -104,13 +115,48 @@ void ASnakePawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsDead || !GridGen) return;
+	if (bIsDead || !GridGen || !SnakeSpline) return;
 
 	// Run the movement logic every frame for smooth interpolation
 	GridMove(DeltaTime);
 	
 	// breadcrumbs for snake history
-	FVector CurrentLocation = GetActorLocation();
+	FVector CurrentHeadLocation = GetActorLocation();
+
+	if (SnakeHistory.Num() == 0)
+	{
+		// add twice for history buffer
+		SnakeHistory.Add(CurrentHeadLocation);
+		SnakeHistory.Add(CurrentHeadLocation);
+	}
+	else 
+	{
+		SnakeHistory[0] = CurrentHeadLocation;
+	}
+
+	// breadcrumbs start after moving far enough away from head
+	if (FVector::Dist(CurrentHeadLocation, SnakeHistory[1]) >= 25.0f)
+	{
+		// push back after the head
+		SnakeHistory.Insert(CurrentHeadLocation, 1);
+	}
+
+	// sync spline to history
+	SnakeSpline->ClearSplinePoints(false);
+	for (int32 i = 0; i < SnakeHistory.Num(); i++)
+	{
+		// Add points to spline
+		SnakeSpline->AddSplinePoint(SnakeHistory[i], ESplineCoordinateSpace::World, false);
+		SnakeSpline->SetSplinePointType(i, ESplinePointType::Linear, false);
+	}
+	SnakeSpline->UpdateSpline();
+
+	// trim history
+	int32 MaxHistory = (SegmentCount + 1) * (TileSize / 10.0f); // magic number for now (is threshold for spline points)
+	while (SnakeHistory.Num() > MaxHistory + 2)
+	{
+		SnakeHistory.Pop();
+	}
     
 	UpdateSplineVisuals();
 	
@@ -143,18 +189,25 @@ void ASnakePawn::GridMove(float DeltaTime)
 		StepTargetWorldLocation = GridToWorldLocation(PendingNextGridLocation);
 		// Since we're just starting to move towards the new target, we reset the interpolation progress to 0
 		MoveInterpolationProgress = 0.f; 
+		HeadStartRotation = HeadMesh->GetComponentRotation();
 		bIsMovingToTarget = true;
 	}
 
 	MoveInterpolationProgress += DeltaTime / MoveInterval;
 	const float Alpha = FMath::Clamp(MoveInterpolationProgress, 0.f, 1.f);
 
+	// smoothly rotate head to target using quaternions for shortest path
+	FQuat QStart = HeadStartRotation.Quaternion();
+	FQuat QTarget = HeadTargetRotation.Quaternion();
+	FQuat QInterp = FQuat::Slerp(QStart, QTarget, Alpha);
+	HeadMesh->SetWorldRotation(QInterp);
 	// Use Lerp for constant speed across the cell
 	const FVector NewLocation = FMath::Lerp(StepStartWorldLocation, StepTargetWorldLocation, Alpha);
 	SetActorLocation(NewLocation, false);
 
 	if (Alpha >= 1.f)
 	{
+		HeadMesh->SetWorldRotation(HeadTargetRotation);
 		// Update Segment logic positions
 		for (int32 i = SegmentLocations.Num() - 1; i > 0; i--) {
 			SegmentLocations[i] = SegmentLocations[i - 1];
@@ -195,16 +248,12 @@ void ASnakePawn::CheckLayerTransition(int32 TargetX, int32 TargetY)
 
 void ASnakePawn::AddSegment()
 {
-	UStaticMeshComponent* NewPart = NewObject<UStaticMeshComponent>(this);
-	NewPart->RegisterComponent();
-	NewPart->SetStaticMesh(BodyMeshAsset);
-	NewPart->SetCollisionEnabled(ECollisionEnabled::NoCollision); // Only head handles collisions
     
 	// Logic: Add a location at the very end
-	FVector LastLoc = SegmentLocations.Last();
+	FVector LastLoc = SegmentLocations.Num() > 0 ? SegmentLocations.Last() : GetActorLocation();
 	SegmentLocations.Add(LastLoc);
     
-	BodyParts.Add(NewPart);
+	SegmentCount++;
 }
 
 void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -312,13 +361,13 @@ void ASnakePawn::UpdateDirection(ESnakeDirection NewDirection)
 {
 	switch (NewDirection)
 	{
-		case ESnakeDirection::Up:	SetActorRotation(FRotator(0.f, 0.f, 0.f));
+		case ESnakeDirection::Up:	HeadTargetRotation = FRotator(0.f, -90.f, 0.f);
 			break;
-		case ESnakeDirection::Down:	SetActorRotation(FRotator(0.f, 180.f, 0.f));
+		case ESnakeDirection::Down:	HeadTargetRotation = FRotator(0.f, 90.f, 0.f);
 			break;
-		case ESnakeDirection::Left:	SetActorRotation(FRotator(0.f, -90.f, 0.f));
+		case ESnakeDirection::Left:	HeadTargetRotation = FRotator(0.f, 180.f, 0.f);
 			break;
-		case ESnakeDirection::Right:SetActorRotation(FRotator(0.f, 90.f, 0.f));
+		case ESnakeDirection::Right:HeadTargetRotation = FRotator(0.f, 0.f, 0.f);
 			break;
 	}
 }
@@ -407,6 +456,14 @@ void ASnakePawn::ResetSnake()
 	MoveInterpolationProgress = 0.f;
 	bIsMovingToTarget = false;
 	bIsDead = false;
+	SegmentCount = 0;
+	SnakeHistory.Empty();
+	SegmentLocations.Empty();
+	SegmentLocations.Add(ResetLocation);
+	BodyParts.Empty();
+	SplineMeshParts.Empty();
+	SnakeSpline->ClearSplinePoints(true);
+	SnakeSpline->UpdateSpline();
 }
 
 FIntPoint ASnakePawn::GetClampedStartGridPosition() const
@@ -461,30 +518,42 @@ void ASnakePawn::DrawDebugInfo()
 void ASnakePawn::UpdateSplineVisuals()
 {
 	// add splines
-	while (SplineMeshParts.Num() < SegmentLocations.Num())
+	while (SplineMeshParts.Num() < SegmentCount)
 	{
 		USplineMeshComponent* NewMesh = NewObject<USplineMeshComponent>(this);
 		NewMesh->SetStaticMesh(BodyMeshAsset);
+		// set based on forward axis
+		NewMesh->SetForwardAxis(ESplineMeshAxis::X, false);
 		NewMesh->SetMobility(EComponentMobility::Movable);
+		NewMesh->AttachToComponent(SnakeSpline, FAttachmentTransformRules::KeepRelativeTransform);
 		NewMesh->RegisterComponent();
-		NewMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		
 		SplineMeshParts.Add(NewMesh);
 	}
+	// deformation
+	float SplineLength = SnakeSpline->GetSplineLength();
 	// position along spline
+	float HeadOffset = 30.0f;
 	for (int32 i = 0; i < SplineMeshParts.Num(); i++)
 	{
-		USplineMeshComponent* SplineMeshComp = SplineMeshParts[i];
+		// USplineMeshComponent* SplineMeshComp = SplineMeshParts[i];
 
 		// find start and end of segment on the spline
-		float StartDist = i * TileSize;
-		float EndDist = (i + 1) * TileSize;
+		float StartDist = (i * TileSize) + HeadOffset;
+		float EndDist = ((i + 1) * TileSize) + HeadOffset;
 
 		FVector StartPos = SnakeSpline->GetLocationAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
 		FVector StartTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
 		FVector EndPos = SnakeSpline->GetLocationAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
 		FVector EndTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
 
+		FVector LocalStart = SplineMeshParts[i]->GetComponentTransform().InverseTransformPosition(StartPos);
+        FVector LocalEnd = SplineMeshParts[i]->GetComponentTransform().InverseTransformPosition(EndPos);
+        FVector LocalStartTangent = SplineMeshParts[i]->GetComponentTransform().InverseTransformVector(StartTangent);
+        FVector LocalEndTangent = SplineMeshParts[i]->GetComponentTransform().InverseTransformVector(EndTangent);
+
+        SplineMeshParts[i]->SetStartAndEnd(LocalStart, LocalStartTangent, LocalEnd, LocalEndTangent, true);
 		// deforms the mesh
-		SplineMeshComp->SetStartAndEnd(StartPos, StartTangent, EndPos, EndTangent, true);
+		// SplineMeshComp->SetStartAndEnd(StartPos, StartTangent, EndPos, EndTangent, true);
 	}
 }

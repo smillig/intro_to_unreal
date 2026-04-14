@@ -56,6 +56,9 @@ protected:
 	UStaticMesh* BodyMeshAsset;
 
 	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
+	UMaterialInterface* BodyMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
 	UStaticMesh* TailMeshAsset;
 
 	UPROPERTY(VisibleAnywhere, Category = "Snake Visuals")
@@ -94,6 +97,8 @@ protected:
 	AAGridGenerator* GridGen;
 	// Grid coordinates of snake
 	TArray<FVector> SegmentLocations; 
+	int32 SegmentCount = 0;
+	TArray<FVector> SnakeHistory;
 	TArray<UStaticMeshComponent*> BodyParts;
 	float VerticalOffset = 65.0f;
 
@@ -106,6 +111,8 @@ protected:
 	FIntPoint PendingNextGridLocation = FIntPoint(0, 0);
 	FVector StepStartWorldLocation = FVector::ZeroVector;
 	FVector StepTargetWorldLocation = FVector::ZeroVector;
+	FRotator HeadStartRotation;
+	FRotator HeadTargetRotation;
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
