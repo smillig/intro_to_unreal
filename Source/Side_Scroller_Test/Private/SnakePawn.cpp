@@ -29,9 +29,9 @@ ASnakePawn::ASnakePawn()
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	RootComponent = CollisionComponent;
 
-	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
-	HeadMesh->SetupAttachment(RootComponent);
-	// HeadMesh->SetHiddenInGame(true);
+	HeadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
+	HeadMeshComponent->SetupAttachment(RootComponent);
+	HeadMeshComponent->SetHiddenInGame(true);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -63,7 +63,7 @@ void ASnakePawn::BeginPlay()
 	// Find the Grid Generator in the level
 	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass());
 	GridGen = Cast<AAGridGenerator>(FoundActor);
-	// HeadMesh->SetHiddenInGame(true);
+	HeadMeshComponent->SetHiddenInGame(true);
 	
 	FVector SpawnLocation = GetActorLocation();
 
@@ -135,7 +135,7 @@ void ASnakePawn::Tick(float DeltaTime)
 	SnakeHistory[0] = CurrentHeadLocation;
 	
 	// Breadcrumbs: Check distance between current head (0) and last recorded breadcrumb (1)
-	if (FVector::Dist(SnakeHistory[0], SnakeHistory[1]) >= 10.0f)
+	if (FVector::Dist(SnakeHistory[0], SnakeHistory[1]) >= 7.0f)
 	{
 		// Insert a new breadcrumb at index 1
 		SnakeHistory.Insert(CurrentHeadLocation, 1);
@@ -157,7 +157,7 @@ void ASnakePawn::Tick(float DeltaTime)
 	while (SnakeSpline->GetSplineLength() > RequiredLength && SnakeHistory.Num() > 2)
 	{
 		SnakeHistory.Pop();
-		// We must update the spline inside the loop to get the new length
+		// update the spline inside the loop to get the new length
 		SnakeSpline->ClearSplinePoints(false);
 		for (int32 i = 0; i < SnakeHistory.Num(); i++)
 		{
@@ -197,7 +197,7 @@ void ASnakePawn::GridMove(float DeltaTime)
 		StepTargetWorldLocation = GridToWorldLocation(PendingNextGridLocation);
 		// Since we're just starting to move towards the new target, we reset the interpolation progress to 0
 		MoveInterpolationProgress = 0.f; 
-		HeadStartRotation = HeadMesh->GetComponentRotation();
+		HeadStartRotation = HeadMeshComponent->GetComponentRotation();
 		bIsMovingToTarget = true;
 	}
 
@@ -208,14 +208,14 @@ void ASnakePawn::GridMove(float DeltaTime)
 	FQuat QStart = HeadStartRotation.Quaternion();
 	FQuat QTarget = HeadTargetRotation.Quaternion();
 	FQuat QInterp = FQuat::Slerp(QStart, QTarget, Alpha);
-	HeadMesh->SetWorldRotation(QInterp);
+	HeadMeshComponent->SetWorldRotation(QInterp);
 	// Use Lerp for constant speed across the cell
 	const FVector NewLocation = FMath::Lerp(StepStartWorldLocation, StepTargetWorldLocation, Alpha);
 	SetActorLocation(NewLocation, false);
 
 	if (Alpha >= 1.f)
 	{
-		HeadMesh->SetWorldRotation(HeadTargetRotation);
+		HeadMeshComponent->SetWorldRotation(HeadTargetRotation);
 		// Update Segment logic positions
 		for (int32 i = SegmentLocations.Num() - 1; i > 0; i--) {
 			SegmentLocations[i] = SegmentLocations[i - 1];
@@ -532,7 +532,7 @@ void ASnakePawn::DrawDebugInfo()
 
 void ASnakePawn::UpdateSplineVisuals()
 {
-	int32 TotalVisualParts = SegmentCount;
+	int32 TotalVisualParts = SegmentCount + 1;
     float CurrentSplineLength = SnakeSpline->GetSplineLength();
 
     while (SplineMeshParts.Num() < TotalVisualParts)
@@ -563,10 +563,16 @@ void ASnakePawn::UpdateSplineVisuals()
 
         // Assign Mesh
         UStaticMesh* SelectedMesh = BodyMeshAsset;
-        // if (i == 0) SelectedMesh = HeadMeshAsset;
-        if (i == TotalVisualParts - 1 && SegmentCount > 0) SelectedMesh = TailMeshAsset;
+        if (i == 0) SelectedMesh = HeadMeshAsset;
+        else if (i == TotalVisualParts - 1 && SegmentCount > 0)
+        {
+	        SelectedMesh = TailMeshAsset;
+        }
         
-        if (SMC->GetStaticMesh() != SelectedMesh) SMC->SetStaticMesh(SelectedMesh);
+        if (SMC->GetStaticMesh() != SelectedMesh)
+        {
+	        SMC->SetStaticMesh(SelectedMesh);
+        }
 
         // Spline calculations
         FVector StartPos = SnakeSpline->GetLocationAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);

@@ -50,7 +50,7 @@ protected:
 	UCameraComponent* Camera;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Snake Visuals")
-	UStaticMeshComponent* HeadMesh;
+	UStaticMeshComponent* HeadMeshComponent;
 	
 	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
 	UStaticMesh* HeadMeshAsset;
