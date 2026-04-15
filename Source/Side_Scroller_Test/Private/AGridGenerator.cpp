@@ -3,6 +3,9 @@
 
 #include "AGridGenerator.h"
 
+#include "SnakePawn.h"
+
+
 // Sets default values
 AAGridGenerator::AAGridGenerator()
 {
@@ -16,7 +19,7 @@ AAGridGenerator::AAGridGenerator()
 	BridgeISMC = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BridgeISMC"));
 
 	TArray<UInstancedStaticMeshComponent*> AllComponents = { FloorISMC, RampISMC, WallISMC, TunnelISMC, BridgeISMC };
-
+	
     for (UInstancedStaticMeshComponent* Comp : AllComponents)
     {
         if (Comp)

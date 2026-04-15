@@ -175,10 +175,29 @@ void ASnakePawn::Tick(float DeltaTime)
 void ASnakePawn::GridMove(float DeltaTime)
 {
 	// Check if in a tunnel or on a bridge or if in move interval time
-	if (bIsMovementLocked || (MoveInterval <= 0.f)) return;
+	if (!HasAuthority() || bIsMovementLocked || (MoveInterval <= 0.f)) return;
 
 	if (!bIsMovingToTarget)
 	{
+		// future multiplayer server side auth code
+		// server side logic
+		// calculate next desired position
+		// const FIntPoint NextGridLocation = CurrentGridLocation + DirectionToGridOffset(CurrentDirection);
+		// int32 NextLayer = CalculateNextLayer(NextGridLocation); // helper to check for ramps
+		//
+		// // ask GridGen (Server authority) if that cell is safe
+		// if (GridGen->IsLocationBlocked(NextGridLocation, NextLayer, this))
+		// {
+		// 	// your fate is death sayeth the server
+		// 	HandleSnakeDeath();
+		// 	return;
+		// }
+		//
+		// // if safe, the server updates the occupancy map for everyone else
+		// GridGen->UpdateOccupancy(this, ...);
+		//
+		// Server_TargetLocation = GridToWorldLocation(NextGridLocation);
+		
 		// If at target, check for direction change and update target location
 		HandleDirectionChange();
 

@@ -7,6 +7,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "AGridGenerator.generated.h"
 
+class ASnakePawn;
+
 UENUM(BlueprintType)
 enum class EGridDensity : uint8 { Off, Low, Medium, High };
 
@@ -39,6 +41,17 @@ struct FGridCell
 	FVector ForcedDir = FVector::ZeroVector;
 
 	// layer helper
+	int32 Layer = 0;
+};
+
+USTRUCT()
+struct FOccupancyData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	ASnakePawn* OwnerPawn = nullptr;
+	
 	int32 Layer = 0;
 };
 
@@ -91,6 +104,15 @@ protected:
 	// virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
+	
+	// Map key is FIntPoint(X, Y), Value is a list of who is at what layer there
+	TMap<FIntPoint, TArray<FOccupancyData>> OccupancyMap;
+	
+	// future multiplayer
+	// Server-only function to update the map
+	// void UpdateOccupancy(ASnakePawn* Pawn, const TArray<FIntPoint>& OldPositions, const TArray<int32>& OldLayers, const TArray<FIntPoint>& NewPositions, const TArray<int32>& NewLayers);
+	//
+	// bool IsLocationBlocked(FIntPoint GridPos, int32 Layer, ASnakePawn* RequestingPawn);
 
 public:	
 	// Called every frame

@@ -59,3 +59,18 @@ void ASnakeGameMode::SpawnFood()
 		GetWorld()->SpawnActor<AFoodActor>(FoodToSpawn, SpawnLocation, FRotator::ZeroRotator);
 	}
 }
+
+// example code for future multiplayer collision handler
+// void ASnakeGameMode::OnSnakeHitCollision(ASnakePawn* Victim, ASnakePawn* Attacker)
+// {
+// 	// Award points to the Attacker (if it wasn't a self-collision)
+// 	if (Attacker && Attacker != Victim) {
+// 		Attacker->AddScore(100);
+// 	}
+//
+// 	// Kill the Victim
+// 	Victim->SetIsDead(true);
+//
+// 	// Logic for respawning or Game Over
+// 	RestartPlayer(Victim->GetController());
+// }
