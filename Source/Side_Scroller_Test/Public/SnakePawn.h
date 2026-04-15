@@ -53,14 +53,14 @@ protected:
 	UStaticMeshComponent* HeadMesh;
 	
 	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
+	UStaticMesh* HeadMeshAsset;
+	
+	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
 	UStaticMesh* BodyMeshAsset;
 
 	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
-	UMaterialInterface* BodyMaterial;
-
-	UPROPERTY(EditAnywhere, Category = "Snake Visuals")
 	UStaticMesh* TailMeshAsset;
-
+	
 	UPROPERTY(VisibleAnywhere, Category = "Snake Visuals")
 	USplineComponent* SnakeSpline;
 

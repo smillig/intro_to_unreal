@@ -31,6 +31,7 @@ ASnakePawn::ASnakePawn()
 
 	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
 	HeadMesh->SetupAttachment(RootComponent);
+	// HeadMesh->SetHiddenInGame(true);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -62,6 +63,7 @@ void ASnakePawn::BeginPlay()
 	// Find the Grid Generator in the level
 	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass());
 	GridGen = Cast<AAGridGenerator>(FoundActor);
+	// HeadMesh->SetHiddenInGame(true);
 	
 	FVector SpawnLocation = GetActorLocation();
 
@@ -123,21 +125,19 @@ void ASnakePawn::Tick(float DeltaTime)
 	// breadcrumbs for snake history
 	FVector CurrentHeadLocation = GetActorLocation();
 
-	if (SnakeHistory.Num() == 0)
+	if (SnakeHistory.Num() < 2)
 	{
-		// add twice for history buffer
-		SnakeHistory.Add(CurrentHeadLocation);
-		SnakeHistory.Add(CurrentHeadLocation);
+		SnakeHistory.Empty();
+		SnakeHistory.Add(CurrentHeadLocation); // Index 0: The "Live" Head
+		SnakeHistory.Add(CurrentHeadLocation); // Index 1: The first breadcrumb
 	}
-	else 
+	
+	SnakeHistory[0] = CurrentHeadLocation;
+	
+	// Breadcrumbs: Check distance between current head (0) and last recorded breadcrumb (1)
+	if (FVector::Dist(SnakeHistory[0], SnakeHistory[1]) >= 10.0f)
 	{
-		SnakeHistory[0] = CurrentHeadLocation;
-	}
-
-	// breadcrumbs start after moving far enough away from head
-	if (FVector::Dist(CurrentHeadLocation, SnakeHistory[1]) >= 25.0f)
-	{
-		// push back after the head
+		// Insert a new breadcrumb at index 1
 		SnakeHistory.Insert(CurrentHeadLocation, 1);
 	}
 
@@ -145,17 +145,25 @@ void ASnakePawn::Tick(float DeltaTime)
 	SnakeSpline->ClearSplinePoints(false);
 	for (int32 i = 0; i < SnakeHistory.Num(); i++)
 	{
-		// Add points to spline
 		SnakeSpline->AddSplinePoint(SnakeHistory[i], ESplineCoordinateSpace::World, false);
-		SnakeSpline->SetSplinePointType(i, ESplinePointType::Linear, false);
+		// Changed to Curve for smoother visuals
+		SnakeSpline->SetSplinePointType(i, ESplinePointType::Curve, false);
 	}
 	SnakeSpline->UpdateSpline();
 
-	// trim history
-	int32 MaxHistory = (SegmentCount + 1) * (TileSize / 10.0f); // magic number for now (is threshold for spline points)
-	while (SnakeHistory.Num() > MaxHistory + 2)
+	// Trim history based on current segment count
+	float RequiredLength = (SegmentCount + 1) * TileSize;
+    
+	while (SnakeSpline->GetSplineLength() > RequiredLength && SnakeHistory.Num() > 2)
 	{
 		SnakeHistory.Pop();
+		// We must update the spline inside the loop to get the new length
+		SnakeSpline->ClearSplinePoints(false);
+		for (int32 i = 0; i < SnakeHistory.Num(); i++)
+		{
+			SnakeSpline->AddSplinePoint(SnakeHistory[i], ESplineCoordinateSpace::World, false);
+		}
+		SnakeSpline->UpdateSpline();
 	}
     
 	UpdateSplineVisuals();
@@ -454,16 +462,23 @@ void ASnakePawn::ResetSnake()
 	StepStartWorldLocation = ResetLocation;
 	StepTargetWorldLocation = ResetLocation;
 	MoveInterpolationProgress = 0.f;
-	bIsMovingToTarget = false;
-	bIsDead = false;
-	SegmentCount = 0;
-	SnakeHistory.Empty();
-	SegmentLocations.Empty();
-	SegmentLocations.Add(ResetLocation);
 	BodyParts.Empty();
+	TArray<USceneComponent*> SnakeSplineChildren;
+	SnakeSpline->GetChildrenComponents(true, SnakeSplineChildren);
+	for (USplineMeshComponent* SnakeSplineMeshComponent : SplineMeshParts)
+	{
+		if (SnakeSplineMeshComponent) SnakeSplineMeshComponent->DestroyComponent();
+	}
+	SnakeHistory.Empty();
+    SegmentLocations.Empty();
+    SegmentLocations.Add(ResetLocation);
+	SegmentLocations.Add(ResetLocation); // buffer extra slot just in case
+	SegmentCount = 0;
 	SplineMeshParts.Empty();
 	SnakeSpline->ClearSplinePoints(true);
 	SnakeSpline->UpdateSpline();
+	bIsMovingToTarget = false;
+    bIsDead = false;
 }
 
 FIntPoint ASnakePawn::GetClampedStartGridPosition() const
@@ -517,43 +532,56 @@ void ASnakePawn::DrawDebugInfo()
 
 void ASnakePawn::UpdateSplineVisuals()
 {
-	// add splines
-	while (SplineMeshParts.Num() < SegmentCount)
-	{
-		USplineMeshComponent* NewMesh = NewObject<USplineMeshComponent>(this);
-		NewMesh->SetStaticMesh(BodyMeshAsset);
-		// set based on forward axis
-		NewMesh->SetForwardAxis(ESplineMeshAxis::X, false);
-		NewMesh->SetMobility(EComponentMobility::Movable);
-		NewMesh->AttachToComponent(SnakeSpline, FAttachmentTransformRules::KeepRelativeTransform);
-		NewMesh->RegisterComponent();
-		
-		SplineMeshParts.Add(NewMesh);
-	}
-	// deformation
-	float SplineLength = SnakeSpline->GetSplineLength();
-	// position along spline
-	float HeadOffset = 30.0f;
-	for (int32 i = 0; i < SplineMeshParts.Num(); i++)
-	{
-		// USplineMeshComponent* SplineMeshComp = SplineMeshParts[i];
+	int32 TotalVisualParts = SegmentCount;
+    float CurrentSplineLength = SnakeSpline->GetSplineLength();
 
-		// find start and end of segment on the spline
-		float StartDist = (i * TileSize) + HeadOffset;
-		float EndDist = ((i + 1) * TileSize) + HeadOffset;
+    while (SplineMeshParts.Num() < TotalVisualParts)
+    {
+        USplineMeshComponent* NewMesh = NewObject<USplineMeshComponent>(this);
+        NewMesh->SetForwardAxis(ESplineMeshAxis::X, false);
+        NewMesh->SetMobility(EComponentMobility::Movable);
+        NewMesh->AttachToComponent(SnakeSpline, FAttachmentTransformRules::KeepRelativeTransform);
+        NewMesh->RegisterComponent();
+        SplineMeshParts.Add(NewMesh);
+    }
 
-		FVector StartPos = SnakeSpline->GetLocationAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
-		FVector StartTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
-		FVector EndPos = SnakeSpline->GetLocationAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
-		FVector EndTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
+    for (int32 i = 0; i < SplineMeshParts.Num(); i++)
+    {
+        USplineMeshComponent* SMC = SplineMeshParts[i];
 
-		FVector LocalStart = SplineMeshParts[i]->GetComponentTransform().InverseTransformPosition(StartPos);
-        FVector LocalEnd = SplineMeshParts[i]->GetComponentTransform().InverseTransformPosition(EndPos);
-        FVector LocalStartTangent = SplineMeshParts[i]->GetComponentTransform().InverseTransformVector(StartTangent);
-        FVector LocalEndTangent = SplineMeshParts[i]->GetComponentTransform().InverseTransformVector(EndTangent);
+        // Hide parts that are beyond our current segment count OR beyond current spline length
+        float StartDist = i * TileSize;
+        float EndDist = (i + 1) * TileSize;
 
-        SplineMeshParts[i]->SetStartAndEnd(LocalStart, LocalStartTangent, LocalEnd, LocalEndTangent, true);
-		// deforms the mesh
-		// SplineMeshComp->SetStartAndEnd(StartPos, StartTangent, EndPos, EndTangent, true);
+        if (i >= TotalVisualParts || StartDist > CurrentSplineLength)
+        {
+            SMC->SetVisibility(false);
+            continue;
+        }
+
+        SMC->SetVisibility(true);
+
+        // Assign Mesh
+        UStaticMesh* SelectedMesh = BodyMeshAsset;
+        // if (i == 0) SelectedMesh = HeadMeshAsset;
+        if (i == TotalVisualParts - 1 && SegmentCount > 0) SelectedMesh = TailMeshAsset;
+        
+        if (SMC->GetStaticMesh() != SelectedMesh) SMC->SetStaticMesh(SelectedMesh);
+
+        // Spline calculations
+        FVector StartPos = SnakeSpline->GetLocationAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
+        FVector StartTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(StartDist, ESplineCoordinateSpace::World);
+        FVector EndPos = SnakeSpline->GetLocationAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
+        FVector EndTangent = SnakeSpline->GetTangentAtDistanceAlongSpline(EndDist, ESplineCoordinateSpace::World);
+
+        FTransform CombinedTransform = SMC->GetComponentTransform();
+        FVector LocalStart = CombinedTransform.InverseTransformPosition(StartPos);
+        FVector LocalStartTangent = CombinedTransform.InverseTransformVector(StartTangent);
+        FVector LocalEnd = CombinedTransform.InverseTransformPosition(EndPos);
+        FVector LocalEndTangent = CombinedTransform.InverseTransformVector(EndTangent);
+
+        // Clamp tangents to TileSize to prevent the mesh from "exploding" on sharp turns
+        SMC->SetStartAndEnd(LocalStart, LocalStartTangent.GetClampedToMaxSize(TileSize), 
+                            LocalEnd, LocalEndTangent.GetClampedToMaxSize(TileSize), true);
 	}
 }
