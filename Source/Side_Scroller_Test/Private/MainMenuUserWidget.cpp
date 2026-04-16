@@ -1,0 +1,75 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "MainMenuUserWidget.h"
+#include "Components/Button.h"
+#include "Components/WidgetSwitcher.h"
+#include "SnakeGameInstance.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
+#include "Components/EditableText.h"
+
+void UMainMenuUserWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	// Page 0
+	if (Button_Solo) Button_Solo->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnSoloClicked);
+	if (Button_Multiplayer) Button_Multiplayer->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnMultiplayerClicked);
+	if (Button_Quit) Button_Quit->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnQuitClicked);
+
+	// Page 1: Hallway
+	if (Button_ToHostPage) Button_ToHostPage->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnToHostPageClicked);
+	if (Button_ToJoinPage) Button_ToJoinPage->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnToJoinPageClicked);
+	if (Button_BackToMain) Button_BackToMain->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnBackToMainClicked);
+
+	// Page 2: Host
+	if (Button_FinalHost) Button_FinalHost->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnFinalHostClicked);
+	if (Button_BackToHallway_FromHost) Button_BackToHallway_FromHost->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnBackToHallwayClicked);
+
+	// Page 3: Join
+	if (Button_FinalJoin) Button_FinalJoin->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnFinalJoinClicked);
+	if (Button_BackToHallway_FromJoin) Button_BackToHallway_FromJoin->OnClicked.AddDynamic(this, &UMainMenuUserWidget::OnBackToHallwayClicked);
+}
+
+// NAVIGATION IMPLEMENTATIONS
+void UMainMenuUserWidget::OnMultiplayerClicked() { if(MenuSwitcher) MenuSwitcher->SetActiveWidgetIndex(1); }
+void UMainMenuUserWidget::OnBackToMainClicked()  { if(MenuSwitcher) MenuSwitcher->SetActiveWidgetIndex(0); }
+void UMainMenuUserWidget::OnBackToHallwayClicked(){ if(MenuSwitcher) MenuSwitcher->SetActiveWidgetIndex(1); }
+void UMainMenuUserWidget::OnToHostPageClicked()  { if(MenuSwitcher) MenuSwitcher->SetActiveWidgetIndex(2); }
+void UMainMenuUserWidget::OnToJoinPageClicked()  { if(MenuSwitcher) MenuSwitcher->SetActiveWidgetIndex(3); }
+
+void UMainMenuUserWidget::OnSoloClicked()
+{
+	if (auto GI = Cast<USnakeGameInstance>(GetGameInstance()))
+	{
+		GI->SelectedMode = EPlayMode::Solo;
+	}
+	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_Solo1"));
+}
+
+void UMainMenuUserWidget::OnQuitClicked()
+{
+	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, true);
+}
+
+void UMainMenuUserWidget::OnFinalHostClicked()
+{
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	if (GI && Host_NameInput && Host_PortInput)
+	{
+		GI->UserPlayerName = Host_NameInput->GetText().ToString();
+		GI->HostGame(Host_PortInput->GetText().ToString());
+	}
+}
+
+void UMainMenuUserWidget::OnFinalJoinClicked()
+{
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	// FIX: Added Join_PortInput check
+	if (GI && Join_IPInput && Join_PortInput)
+	{
+		GI->UserPlayerName = Join_IPInput->GetText().ToString(); // Or use a separate NameInput
+		GI->JoinGame(Join_IPInput->GetText().ToString(), Join_PortInput->GetText().ToString());
+	}
+}

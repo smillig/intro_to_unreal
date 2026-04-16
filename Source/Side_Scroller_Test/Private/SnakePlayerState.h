@@ -6,12 +6,21 @@
 #include "GameFramework/PlayerState.h"
 #include "SnakePlayerState.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
-class ASnakePlayerState : public APlayerState
+class SIDE_SCROLLER_TEST_API ASnakePlayerState : public APlayerState
 {
 	GENERATED_BODY()
 	
+public:
+	// The variable we want to share across the network
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake")
+	FString SnakeName;
+
+	// The RPC to set the name on the server
+	UFUNCTION(Server, Reliable)
+	void Server_SetSnakeName(const FString& NewName);
+
+	// MANDATORY for replication to work
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
