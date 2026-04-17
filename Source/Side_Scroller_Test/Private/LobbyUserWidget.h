@@ -8,6 +8,7 @@
 
 class UButton;
 class UEditableText;
+class UTextBlock;
 
 UCLASS()
 class ULobbyUserWidget : public UUserWidget
@@ -15,6 +16,12 @@ class ULobbyUserWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Host_NameDisplay;
+	
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Client_NameDisplay;
+	
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* Host_IPDisplay;
 	
@@ -31,6 +38,8 @@ protected:
 	// Added override declaration
     virtual void NativeConstruct() override;
 	
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	
 	UFUNCTION()
 	void OnLeaveLobbyClicked();
 	
@@ -39,7 +48,4 @@ protected:
 	
 	UFUNCTION()
 	void OnStartCoopClicked();
-	
-	UFUNCTION()
-	FString GetLocalIPAddress();
 };

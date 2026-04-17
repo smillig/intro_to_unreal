@@ -14,4 +14,13 @@ class ASnakeGameState : public AGameState
 {
 	GENERATED_BODY()
 	
+public:
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	FString HostPlayerName = "Host";
+	
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	FString ClientPlayerName = "";
+	
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_SetClientName(const FString& NewClientName);	
 };

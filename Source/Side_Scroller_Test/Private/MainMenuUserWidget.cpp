@@ -21,6 +21,11 @@ void UMainMenuUserWidget::NativeConstruct()
 	}
 	
 	// Populate host IP with local machine IP
+	if (Host_IPInput)
+	{
+		Host_IPInput->SetText(FText::FromString("127.0.0.1"));
+	}
+	
 	if (Host_IPDisplay)
 	{
 		FString LocalIP = GetLocalIPAddress();
@@ -35,6 +40,16 @@ void UMainMenuUserWidget::NativeConstruct()
 	if (Join_PortInput)
 	{
 		Join_PortInput->SetText(FText::FromString("7755"));
+	}
+	
+	if (Host_NameInput)
+	{
+		Host_NameInput->SetText(FText::FromString("Player1"));
+	}
+	
+	if (Join_NameInput)
+	{
+		Join_NameInput->SetText(FText::FromString("Player2"));
 	}
 	
 	// Page 0
@@ -80,30 +95,30 @@ void UMainMenuUserWidget::OnQuitClicked()
 void UMainMenuUserWidget::OnFinalHostClicked()
 {
 	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
-	if (GI && Host_NameInput && Host_PortInput)
+	if (GI && Host_NameInput && Host_IPInput && Host_PortInput)
 	{
-		GI->UserPlayerName = Host_NameInput ? Host_NameInput->GetText().ToString() : "Host";
-		// if Host_NameInput != "127.0.0.1"
-		// GI->HostGame(Host_PortInput->GetText().ToString());
-		GI->HostGame("7755");
+		// GI->HostPlayerName = Host_NameInput ? Host_NameInput->GetText().ToString() : "Host";
+		// // if Host_NameInput != "127.0.0.1"
+		// GI->HostIPAddress = Host_IPInput->GetText().ToString();
+		// GI->HostPort = Host_PortInput->GetText().ToString();
+		// GI->HostGame(GI->HostPort);
+		GI->UserPlayerName = Host_NameInput->GetText().ToString();
+		GI->HostGame(TEXT("7777"));
 	}
-	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_Lobby"));
 }
 
 void UMainMenuUserWidget::OnFinalJoinClicked()
 {
 	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
-	// FIX: Added Join_PortInput check
-	if (GI && Join_IPInput && Join_PortInput)
+	if (GI && Join_NameInput && Join_IPInput && Join_PortInput)
 	{
 		// quick version for testing and debugging:
-		GI->UserPlayerName = Join_IPInput ? Join_IPInput->GetText().ToString() : "Client";
-		GI->JoinGame("127.0.0.1", "7755");
-		// future more customizable build settings:
-		// GI->UserPlayerName = Join_IPInput->GetText().ToString(); // Or use a separate NameInput
+		// GI->UserPlayerName = Join_NameInput ? Join_NameInput->GetText().ToString() : "Client";
 		// GI->JoinGame(Join_IPInput->GetText().ToString(), Join_PortInput->GetText().ToString());
+		
+		GI->UserPlayerName = Join_NameInput->GetText().ToString();
+		GI->JoinGame(Join_IPInput->GetText().ToString(), TEXT("7777"));
 	}
-	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_Lobby"));
 }
 
 FString UMainMenuUserWidget::GetLocalIPAddress()

@@ -32,4 +32,16 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite)
 	FString UserPlayerName = "SnakePlayer";
+
+	UPROPERTY(BlueprintReadWrite)
+	FString HostPlayerName = "Host";
+
+	UPROPERTY(BlueprintReadWrite)
+	FString ClientPlayerName = "Client";
+
+	UPROPERTY(BlueprintReadWrite)
+	FString HostIPAddress = "127.0.0.1";
+	
+	UPROPERTY(BlueprintReadWrite)
+	FString HostPort = "7755";
 };

@@ -40,6 +40,8 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* Host_IPDisplay;
 	UPROPERTY(meta = (BindWidget))
+	UEditableText* Host_IPInput;
+	UPROPERTY(meta = (BindWidget))
 	UEditableText* Host_NameInput;
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* Host_PortInput;
@@ -49,6 +51,8 @@ public:
 	UButton* Button_BackToHallway_FromHost;
 
 	// --- PAGE 3: JOIN SETTINGS ---
+	UPROPERTY(meta = (BindWidget))
+	UEditableText* Join_NameInput;
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* Join_IPInput;
 	UPROPERTY(meta = (BindWidget))

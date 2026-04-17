@@ -2,4 +2,17 @@
 
 
 #include "SnakeGameState.h"
+#include "Net/UnrealNetwork.h"
 
+void ASnakeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ASnakeGameState, HostPlayerName);
+	DOREPLIFETIME(ASnakeGameState, ClientPlayerName);
+}
+
+void ASnakeGameState::Server_SetClientName_Implementation(const FString& NewClientName)
+{
+	ClientPlayerName = NewClientName;
+}

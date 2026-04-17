@@ -14,8 +14,11 @@ class SIDE_SCROLLER_TEST_API ASnakePlayerState : public APlayerState
 	
 public:
 	// The variable we want to share across the network
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake")
+	UPROPERTY(ReplicatedUsing = OnRep_SnakeName, BlueprintReadOnly, Category = "Snake")
 	FString SnakeName;
+
+	UFUNCTION()
+	void OnRep_SnakeName();
 
 	// The RPC to set the name on the server
 	UFUNCTION(Server, Reliable)

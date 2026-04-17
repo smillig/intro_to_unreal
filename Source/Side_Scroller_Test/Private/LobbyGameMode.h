@@ -12,6 +12,10 @@ class ALobbyGameMode : public AGameMode
 {
 	GENERATED_BODY()
 public:
+	ALobbyGameMode();
+	
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
+	
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UUserWidget> ULobbyUserWidget;
 	

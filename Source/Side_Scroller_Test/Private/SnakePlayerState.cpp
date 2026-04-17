@@ -4,19 +4,22 @@
 #include "SnakePlayerState.h"
 #include "Net/UnrealNetwork.h" // <--- CRITICAL INCLUDE for replication
 
-void ASnakePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void ASnakePlayerState::OnRep_SnakeName()
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	// Tell Unreal to replicate this variable from the server to all clients
-	DOREPLIFETIME(ASnakePlayerState, SnakeName);
+	// This runs on Clients when SnakeName is updated from the server
+	UE_LOG(LogTemp, Log, TEXT("SnakeName replicated to client: %s"), *SnakeName);
 }
 
-// Note the _Implementation suffix!
 void ASnakePlayerState::Server_SetSnakeName_Implementation(const FString& NewName)
 {
 	SnakeName = NewName;
-	
-	// Optional: Log it to verify
-	UE_LOG(LogTemp, Warning, TEXT("Player name set to: %s on the Server"), *SnakeName);
+	// On the Server, OnRep functions don't trigger automatically, 
+	// so we call it manually if the server needs to do something logic-wise.
+	OnRep_SnakeName(); 
+}
+
+void ASnakePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASnakePlayerState, SnakeName);
 }
