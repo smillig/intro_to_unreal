@@ -2,7 +2,27 @@
 
 
 #include "LobbyGameMode.h"
+#include "Kismet/GameplayStatics.h"
+#include "Blueprint/UserWidget.h"
 #include "SnakeGameInstance.h"
+
+void ALobbyGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (ULobbyUserWidget)
+	{
+		UUserWidget* Menu = CreateWidget<UUserWidget>(GetWorld(), ULobbyUserWidget);
+		if (Menu) Menu->AddToViewport();
+		// Optional: show mouse cursor
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+		{
+			PC->bShowMouseCursor = true;
+			PC->SetInputMode(FInputModeUIOnly());
+		}
+	}
+}
+
 
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {

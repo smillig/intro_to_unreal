@@ -38,6 +38,8 @@ public:
 
 	// --- PAGE 2: HOST SETTINGS ---
 	UPROPERTY(meta = (BindWidget))
+	UEditableText* Host_IPDisplay;
+	UPROPERTY(meta = (BindWidget))
 	UEditableText* Host_NameInput;
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* Host_PortInput;
@@ -71,4 +73,7 @@ protected:
 	UFUNCTION() void OnFinalHostClicked();
 	UFUNCTION() void OnFinalJoinClicked();
 	UFUNCTION() void OnQuitClicked();
+	
+	// Networking
+	UFUNCTION() FString GetLocalIPAddress();
 };
