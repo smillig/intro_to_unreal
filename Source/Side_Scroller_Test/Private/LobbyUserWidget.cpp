@@ -34,13 +34,13 @@ void ULobbyUserWidget::NativeConstruct()
 	// Display host name
 	if (Host_NameDisplay)
 	{
-		Host_NameDisplay->SetText(FText::FromString(*GI->HostPlayerName));
+		Host_NameDisplay->SetText(FText::FromString(*GI->UserPlayerName));
 	}
 	
 	// Display client name (or "Waiting for player..." if empty)
 	if (Client_NameDisplay)
 	{
-		FString ClientName = GI->ClientPlayerName.IsEmpty() ? "Waiting for player..." : GameState->ClientPlayerName;
+		FString ClientName = GI->UserPlayerName.IsEmpty() ? "Waiting for player..." : GameState->ClientPlayerName;
 		Client_NameDisplay->SetText(FText::FromString(ClientName));
 	}
 	

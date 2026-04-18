@@ -17,28 +17,7 @@ ALobbyGameMode::ALobbyGameMode()
 void ALobbyGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
-	if (GameState)
-	{
-		USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
-		if (GI)
-		{
-			GameState->HostPlayerName = GI->HostPlayerName;
-		}
-	}
 	
-	if (ULobbyUserWidget)
-	{
-		UUserWidget* Menu = CreateWidget<UUserWidget>(GetWorld(), ULobbyUserWidget);
-		if (Menu) Menu->AddToViewport();
-		// Optional: show mouse cursor
-		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
-		{
-			PC->bShowMouseCursor = true;
-			PC->SetInputMode(FInputModeUIOnly());
-		}
-	}
 }
 
 FString ALobbyGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
@@ -49,7 +28,7 @@ FString ALobbyGameMode::InitNewPlayer(APlayerController* NewPlayerController, co
 	FString InName = UGameplayStatics::ParseOption(Options, TEXT("PlayerName"));
 	
 	// Debug log to see what the Server is actually seeing in the URL
-	UE_LOG(LogTemp, Warning, TEXT("SERVER RECEIVED NAME: %s"), *InName);
+	// UE_LOG(LogTemp, Warning, TEXT("SERVER RECEIVED NAME: %s"), *InName);
 
 	ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
 	if (PS)
@@ -72,6 +51,30 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 {
 	Super::PostLogin(NewPlayerController);
 	// No longer need to parse names here, InitNewPlayer handled it!
+	if (NewPlayerController)
+	{
+		ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
+		if (GameState)
+		{
+			USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+			if (GI)
+			{
+				GameState->HostPlayerName = GI->UserPlayerName;
+			}
+		}
+	
+		if (ULobbyUserWidget)
+		{
+			UUserWidget* Menu = CreateWidget<UUserWidget>(GetWorld(), ULobbyUserWidget);
+			if (Menu) Menu->AddToViewport();
+			// Optional: show mouse cursor
+			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+			{
+				PC->bShowMouseCursor = true;
+				PC->SetInputMode(FInputModeUIOnly());
+			}
+		}
+	}
 }
 
 void ALobbyGameMode::StartGame(EPlayMode PlayMode)

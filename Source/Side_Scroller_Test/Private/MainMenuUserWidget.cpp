@@ -13,33 +13,18 @@
 void UMainMenuUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	// Set default localhost values for testing
-	if (Host_PortInput)
-	{
-		Host_PortInput->SetText(FText::FromString("7755"));
-	}
-	
-	// Populate host IP with local machine IP
-	if (Host_IPInput)
-	{
-		Host_IPInput->SetText(FText::FromString("127.0.0.1"));
-	}
 	
 	if (Host_IPDisplay)
 	{
+		USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
 		FString LocalIP = GetLocalIPAddress();
 		Host_IPDisplay->SetText(FText::FromString(LocalIP));
+		GI->HostIPAddress = LocalIP;
 	}
 	
 	if (Join_IPInput)
 	{
 		Join_IPInput->SetText(FText::FromString("127.0.0.1"));
-	}
-	
-	if (Join_PortInput)
-	{
-		Join_PortInput->SetText(FText::FromString("7755"));
 	}
 	
 	if (Host_NameInput)
@@ -95,29 +80,28 @@ void UMainMenuUserWidget::OnQuitClicked()
 void UMainMenuUserWidget::OnFinalHostClicked()
 {
 	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
-	if (GI && Host_NameInput && Host_IPInput && Host_PortInput)
+	if (GI && Host_NameInput)
 	{
-		// GI->HostPlayerName = Host_NameInput ? Host_NameInput->GetText().ToString() : "Host";
-		// // if Host_NameInput != "127.0.0.1"
-		// GI->HostIPAddress = Host_IPInput->GetText().ToString();
-		// GI->HostPort = Host_PortInput->GetText().ToString();
-		// GI->HostGame(GI->HostPort);
 		GI->UserPlayerName = Host_NameInput->GetText().ToString();
-		GI->HostGame(TEXT("7777"));
+		GI->HostGame();
 	}
 }
 
 void UMainMenuUserWidget::OnFinalJoinClicked()
 {
 	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
-	if (GI && Join_NameInput && Join_IPInput && Join_PortInput)
+	if (GI && Join_NameInput && Join_IPInput)
 	{
-		// quick version for testing and debugging:
-		// GI->UserPlayerName = Join_NameInput ? Join_NameInput->GetText().ToString() : "Client";
-		// GI->JoinGame(Join_IPInput->GetText().ToString(), Join_PortInput->GetText().ToString());
-		
+		// Save the name the user typed
 		GI->UserPlayerName = Join_NameInput->GetText().ToString();
-		GI->JoinGame(Join_IPInput->GetText().ToString(), TEXT("7777"));
+		GI->HostIPAddress = Join_IPInput->GetText().ToString();
+		
+		// Get IP and Port from UI
+		FString IP = Join_IPInput->GetText().ToString();
+		FString Port = GI->HostPort;
+
+		// Join
+		GI->JoinGame(IP, Port);
 	}
 }
 

@@ -25,23 +25,18 @@ public:
 	EPlayMode SelectedMode = EPlayMode::None;
 	
 	UFUNCTION(BlueprintCallable)
-	void HostGame(FString Port);
+	void HostGame();
 	
 	UFUNCTION(BlueprintCallable)
 	void JoinGame(FString IPAddress, FString Port);
 	
+	// UserPlayerName is the Unreal "Universal" player name for each game instance ("window")
 	UPROPERTY(BlueprintReadWrite)
 	FString UserPlayerName = "SnakePlayer";
-
-	UPROPERTY(BlueprintReadWrite)
-	FString HostPlayerName = "Host";
-
-	UPROPERTY(BlueprintReadWrite)
-	FString ClientPlayerName = "Client";
 
 	UPROPERTY(BlueprintReadWrite)
 	FString HostIPAddress = "127.0.0.1";
 	
 	UPROPERTY(BlueprintReadWrite)
-	FString HostPort = "7755";
+	FString HostPort = "7777";
 };

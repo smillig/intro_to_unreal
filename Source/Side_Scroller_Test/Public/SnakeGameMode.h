@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "SnakeGameMode.generated.h"
 
 class AFoodActor;
@@ -11,7 +11,7 @@ class AAGridGenerator;
 class ASnakePawn;
 
 UCLASS()
-class SIDE_SCROLLER_TEST_API ASnakeGameMode : public AGameModeBase
+class SIDE_SCROLLER_TEST_API ASnakeGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
