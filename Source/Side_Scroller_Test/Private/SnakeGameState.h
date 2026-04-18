@@ -21,6 +21,11 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	FString ClientPlayerName = "";
 	
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	FString ServerDisplayIP = "127.0.0.1:7777";
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetClientName(const FString& NewClientName);	
 };

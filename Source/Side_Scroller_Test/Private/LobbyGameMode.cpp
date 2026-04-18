@@ -5,19 +5,29 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "SnakePlayerState.h"
+#include "SnakePlayerController.h"
 #include "SnakeGameInstance.h"
 #include "SnakeGameState.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
 	GameStateClass = ASnakeGameState::StaticClass();
-	PlayerStateClass = ASnakePlayerState::StaticClass(); 
+	PlayerStateClass = ASnakePlayerState::StaticClass();
+	PlayerControllerClass = ASnakePlayerController::StaticClass();
 }
 
 void ALobbyGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	if (ASnakeGameState* GS = GetGameState<ASnakeGameState>())
+	{
+		if (GI)
+		{
+			GS->ServerDisplayIP = GI->HostIPAddress;
+		}
+	}
 }
 
 FString ALobbyGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
@@ -50,10 +60,11 @@ FString ALobbyGameMode::InitNewPlayer(APlayerController* NewPlayerController, co
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 {
 	Super::PostLogin(NewPlayerController);
-	// No longer need to parse names here, InitNewPlayer handled it!
+
 	if (NewPlayerController)
 	{
-		ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
+		// 1. Handle GameState logic (Server-side)
+		ASnakeGameState* GameState = GetGameState<ASnakeGameState>();
 		if (GameState)
 		{
 			USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
@@ -62,17 +73,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 				GameState->HostPlayerName = GI->UserPlayerName;
 			}
 		}
-	
-		if (ULobbyUserWidget)
+
+		// 2. Tell the specific player who just joined to show their UI
+		// We use the RPC because UI must be spawned on the machine that owns the Controller
+		ASnakePlayerController* PC = Cast<ASnakePlayerController>(NewPlayerController);
+		if (PC && ULobbyUserWidget)
 		{
-			UUserWidget* Menu = CreateWidget<UUserWidget>(GetWorld(), ULobbyUserWidget);
-			if (Menu) Menu->AddToViewport();
-			// Optional: show mouse cursor
-			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
-			{
-				PC->bShowMouseCursor = true;
-				PC->SetInputMode(FInputModeUIOnly());
-			}
+			PC->Client_ShowLobbyUI(ULobbyUserWidget);
 		}
 	}
 }

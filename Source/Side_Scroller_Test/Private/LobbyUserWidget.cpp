@@ -15,7 +15,7 @@ void ULobbyUserWidget::NativeConstruct()
 	Super::NativeConstruct();
 	
 	// Check if we are the Host (Server)
-	bool bIsHost = GetOwningPlayer()->HasAuthority();
+	bool bIsServer = (GetWorld()->GetAuthGameMode() != nullptr);
 	
 	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
 	if (!GI) return;
@@ -23,10 +23,11 @@ void ULobbyUserWidget::NativeConstruct()
 	ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
 	if (!GameState) return;
 	
+	SetIsFocusable(true);
+	
 	if (Button_StartBattle && Button_StartCoop)
 	{
 		// Only the server (Host) should see the "Start" buttons
-		bool bIsServer = GetWorld()->GetNetMode() < NM_Client; 
 		Button_StartBattle->SetVisibility(bIsServer ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		Button_StartCoop->SetVisibility(bIsServer ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
@@ -60,21 +61,29 @@ void ULobbyUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (ASnakeGameState* GS = GetWorld()->GetGameState<ASnakeGameState>())
+	ASnakeGameState* GS = GetWorld()->GetGameState<ASnakeGameState>();
+	if (!GS) return;
+
+	if (Host_IPDisplay)
 	{
-		// PlayerArray contains all connected players' PlayerStates
-		if (GS->PlayerArray.Num() >= 1)
+		Host_IPDisplay->SetText(FText::FromString(GS->ServerDisplayIP));
+	}
+	
+	// Loop through all connected players
+	for (int32 i = 0; i < GS->PlayerArray.Num(); i++)
+	{
+		ASnakePlayerState* PS = Cast<ASnakePlayerState>(GS->PlayerArray[i]);
+		if (PS)
 		{
-			if (ASnakePlayerState* PS = Cast<ASnakePlayerState>(GS->PlayerArray[0]))
+			// Player 0 is usually the Host
+			if (i == 0 && Host_NameDisplay)
 			{
-				if (Host_NameDisplay) Host_NameDisplay->SetText(FText::FromString(PS->SnakeName));
+				Host_NameDisplay->SetText(FText::FromString(PS->SnakeName));
 			}
-		}
-		if (GS->PlayerArray.Num() >= 2)
-		{
-			if (ASnakePlayerState* PS = Cast<ASnakePlayerState>(GS->PlayerArray[1]))
+			// Player 1 is the first Client
+			else if (i == 1 && Client_NameDisplay)
 			{
-				if (Client_NameDisplay) Client_NameDisplay->SetText(FText::FromString(PS->SnakeName));
+				Client_NameDisplay->SetText(FText::FromString(PS->SnakeName));
 			}
 		}
 	}
@@ -82,8 +91,15 @@ void ULobbyUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 
 void ULobbyUserWidget::OnLeaveLobbyClicked()
 {
-	// This opens the Main Menu level, effectively disconnecting the player from the server
-	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_MainMenu"));
+	// log button push
+	UE_LOG(LogTemp, Warning, TEXT("Leave Lobby Button Clicked."));
+	APlayerController* PC = GetOwningPlayer();
+	if (PC)
+	{
+		// For a client, "Leaving" means traveling back to their own local Main Menu
+		// This automatically disconnects them from the server.
+		PC->ClientTravel(TEXT("/Game/Snake/Levels/Lvl_MainMenu"), ETravelType::TRAVEL_Absolute);
+	}
 }
 
 void ULobbyUserWidget::OnStartBattleClicked()

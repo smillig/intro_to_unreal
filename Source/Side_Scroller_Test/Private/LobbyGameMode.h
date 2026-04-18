@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "LobbyUserWidget.h"
 #include "LobbyGameMode.generated.h"
 
 
@@ -17,7 +18,7 @@ public:
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
 	
 	UPROPERTY(EditDefaultsOnly, Category="UI")
-	TSubclassOf<UUserWidget> ULobbyUserWidget;
+	TSubclassOf<ULobbyUserWidget> ULobbyUserWidget;
 	
 	UFUNCTION(BlueprintCallable)
 	void StartGame(EPlayMode PlayMode);
