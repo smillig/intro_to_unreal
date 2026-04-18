@@ -17,12 +17,6 @@ void ULobbyUserWidget::NativeConstruct()
 	// Check if we are the Host (Server)
 	bool bIsServer = (GetWorld()->GetAuthGameMode() != nullptr);
 	
-	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
-	if (!GI) return;
-	
-	ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
-	if (!GameState) return;
-	
 	SetIsFocusable(true);
 	
 	if (Button_StartBattle && Button_StartCoop)
@@ -31,6 +25,16 @@ void ULobbyUserWidget::NativeConstruct()
 		Button_StartBattle->SetVisibility(bIsServer ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		Button_StartCoop->SetVisibility(bIsServer ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	}
+	
+	if (Button_LeaveLobby) Button_LeaveLobby->OnClicked.AddDynamic(this, &ULobbyUserWidget::OnLeaveLobbyClicked);
+	if (Button_StartBattle) Button_StartBattle->OnClicked.AddDynamic(this, &ULobbyUserWidget::OnStartBattleClicked);
+	if (Button_StartCoop) Button_StartCoop->OnClicked.AddDynamic(this, &ULobbyUserWidget::OnStartCoopClicked);
+	
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	if (!GI) return;
+	
+	ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
+	if (!GameState) return;
 	
 	// Display host name
 	if (Host_NameDisplay)
@@ -52,9 +56,7 @@ void ULobbyUserWidget::NativeConstruct()
 		Host_IPDisplay->SetIsReadOnly(true);
 	}
 	
-	if (Button_LeaveLobby) Button_LeaveLobby->OnClicked.AddDynamic(this, &ULobbyUserWidget::OnLeaveLobbyClicked);
-	if (Button_StartBattle) Button_StartBattle->OnClicked.AddDynamic(this, &ULobbyUserWidget::OnStartBattleClicked);
-	if (Button_StartCoop) Button_StartCoop->OnClicked.AddDynamic(this, &ULobbyUserWidget::OnStartCoopClicked);
+	
 }
 
 void ULobbyUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -92,7 +94,7 @@ void ULobbyUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 void ULobbyUserWidget::OnLeaveLobbyClicked()
 {
 	// log button push
-	UE_LOG(LogTemp, Warning, TEXT("Leave Lobby Button Clicked."));
+	// UE_LOG(LogTemp, Warning, TEXT("Leave Lobby Button Clicked."));
 	APlayerController* PC = GetOwningPlayer();
 	if (PC)
 	{

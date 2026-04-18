@@ -64,13 +64,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 	if (NewPlayerController)
 	{
 		// 1. Handle GameState logic (Server-side)
-		ASnakeGameState* GameState = GetGameState<ASnakeGameState>();
-		if (GameState)
+		ASnakeGameState* SnakeGameState = GetGameState<ASnakeGameState>();
+		if (SnakeGameState)
 		{
 			USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
 			if (GI)
 			{
-				GameState->HostPlayerName = GI->UserPlayerName;
+				SnakeGameState->HostPlayerName = GI->UserPlayerName;
 			}
 		}
 
