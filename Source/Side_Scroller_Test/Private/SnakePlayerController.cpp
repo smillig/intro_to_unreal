@@ -2,6 +2,7 @@
 
 
 #include "SnakePlayerController.h"
+#include "GameFramework/GameModeBase.h"
 #include "Blueprint/UserWidget.h"
 
 void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobbyUserWidget> WidgetClass)
@@ -20,4 +21,16 @@ void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobb
 			SetInputMode(InputMode);
 		}
 	}
+}
+
+void ASnakePlayerController::Server_LeaveLobby_Implementation()
+{
+	// This tells the server to destroy this controller and its PlayerState immediately
+	if (GetWorld() && GetWorld()->GetAuthGameMode())
+	{
+		GetWorld()->GetAuthGameMode()->Logout(this);
+	}
+    
+	// Destroy the controller on the server
+	Destroy();
 }

@@ -7,7 +7,6 @@
 #include "LobbyUserWidget.h"
 #include "LobbyGameMode.generated.h"
 
-
 UCLASS()
 class ALobbyGameMode : public AGameMode
 {
@@ -27,4 +26,9 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;		
+	
+private:
+	// A map to store names tied to the player's unique ID until they are ready
+	UPROPERTY()
+	TMap<APlayerController*, FString> PendingNames;	
 };

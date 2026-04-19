@@ -8,12 +8,5 @@ void ASnakeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(ASnakeGameState, HostPlayerName);
-	DOREPLIFETIME(ASnakeGameState, ClientPlayerName);
 	DOREPLIFETIME(ASnakeGameState, ServerDisplayIP);
-}
-
-void ASnakeGameState::Server_SetClientName_Implementation(const FString& NewClientName)
-{
-	ClientPlayerName = NewClientName;
 }

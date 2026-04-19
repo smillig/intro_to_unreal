@@ -18,4 +18,7 @@ class SIDE_SCROLLER_TEST_API ASnakePlayerController : public APlayerController
 public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowLobbyUI(TSubclassOf<ULobbyUserWidget> WidgetClass);
+	
+	UFUNCTION(Client, Reliable)
+	void Server_LeaveLobby();
 };
