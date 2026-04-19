@@ -36,27 +36,12 @@ void ULobbyUserWidget::NativeConstruct()
 	ASnakeGameState* GameState = Cast<ASnakeGameState>(GetWorld()->GetGameState());
 	if (!GameState) return;
 	
-	// // Display host name
-	// if (Host_NameDisplay)
-	// {
-	// 	Host_NameDisplay->SetText(FText::FromString(*GI->UserPlayerName));
-	// }
-	//
-	// // Display client name (or "Waiting for player..." if empty)
-	// if (Client_NameDisplay)
-	// {
-	// 	FString ClientName = GI->UserPlayerName.IsEmpty() ? "Waiting for player..." : GameState->ClientPlayerName;
-	// 	Client_NameDisplay->SetText(FText::FromString(ClientName));
-	// }
-	
 	if (Host_IPDisplay)
 	{
 		FString IP_Port = FString::Printf(TEXT("%s:%s"), *GI->HostIPAddress, *GI->HostPort);
 		Host_IPDisplay->SetText(FText::FromString(IP_Port));
 		Host_IPDisplay->SetIsReadOnly(true);
 	}
-	
-	
 }
 
 void ULobbyUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -81,13 +66,7 @@ void ULobbyUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 	{
 		ASnakePlayerState* PS = Cast<ASnakePlayerState>(BasePS);
 		if (!PS || PS->SnakeName.IsEmpty()) continue;
-
-		// UNREAL'S SECRET WEAPON: IsPrimaryPlayer() 
-		// On a Listen Server, the Host is ALWAYS the first player.
-		// Alternatively, we can use the PlayerID.
 		
-		// We'll use a simpler logic: 
-		// If the PlayerState's index in the array is 0, they are the Host.
 		int32 PlayerIndex = GS->PlayerArray.Find(BasePS);
 
 		if (PlayerIndex == 0 && Host_NameDisplay)
@@ -105,8 +84,7 @@ void ULobbyUserWidget::OnLeaveLobbyClicked()
 {
 	// log button push
 	// UE_LOG(LogTemp, Warning, TEXT("Leave Lobby Button Clicked."));
-	
-	
+
 	ASnakePlayerController* PC = Cast<ASnakePlayerController>(GetOwningPlayer());
 	if (!PC) return;
 	if (PC->HasAuthority())
@@ -126,12 +104,10 @@ void ULobbyUserWidget::OnStartBattleClicked()
 {
 	ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 	if (GM) GM->StartGame(EPlayMode::BattleRoyale);
-	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_SnakeBattle1"));
 }
 
 void ULobbyUserWidget::OnStartCoopClicked()
 {
 	ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 	if (GM) GM->StartGame(EPlayMode::CoOp);
-	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_Coop1"));
 }

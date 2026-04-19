@@ -35,6 +35,7 @@ void ALobbyGameMode::BeginPlay()
 			GS->ServerDisplayIP = GI->HostIPAddress;
 		}
 	}
+	bUseSeamlessTravel = true;
 }
 
 FString ALobbyGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
