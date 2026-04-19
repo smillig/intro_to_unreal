@@ -25,12 +25,16 @@ void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobb
 
 void ASnakePlayerController::Server_LeaveLobby_Implementation()
 {
-	// This tells the server to destroy this controller and its PlayerState immediately
-	if (GetWorld() && GetWorld()->GetAuthGameMode())
+	if (!IsLocalController())
 	{
-		GetWorld()->GetAuthGameMode()->Logout(this);
+		// This tells the server to destroy this controller and its PlayerState immediately
+        // if (GetWorld() && GetWorld()->GetAuthGameMode())
+        // {
+        // 	GetWorld()->GetAuthGameMode()->Logout(this);
+        // }
+        
+        // Destroy the clients controller on the server
+        Destroy();
 	}
-    
-	// Destroy the controller on the server
-	Destroy();
+	
 }

@@ -108,7 +108,12 @@ void ULobbyUserWidget::OnLeaveLobbyClicked()
 	
 	
 	ASnakePlayerController* PC = Cast<ASnakePlayerController>(GetOwningPlayer());
-	if (PC)
+	if (!PC) return;
+	if (PC->HasAuthority())
+	{
+		UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_MainMenu"), true);
+	}
+	else
 	{
 		PC->Server_LeaveLobby();
 		// For a client, "Leaving" means traveling back to their own local Main Menu
