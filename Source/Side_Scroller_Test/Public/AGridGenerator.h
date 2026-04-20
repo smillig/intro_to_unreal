@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Components/InstancedStaticMeshComponent.h"
 #include "AGridGenerator.generated.h"
 
 class ASnakePawn;
+class UInstancedStaticMeshComponent;
 
 UENUM(BlueprintType)
 enum class EGridDensity : uint8 { Off, Low, Medium, High };
@@ -64,16 +64,18 @@ class SIDE_SCROLLER_TEST_API AAGridGenerator : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AAGridGenerator();
+	
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_MapSeed, Category="Grid Settings")
+	int32 MapSeed = 12345;
 
+	bool bHasGeneratedMap = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	int32 Width = 20;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	int32 Height = 20;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
-	int32 MapSeed = 12345;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Settings")
 	float TileSize = 100.0f;
 
@@ -98,6 +100,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	UInstancedStaticMeshComponent* BridgeISMC;
+	
+	UFUNCTION()
+	void OnRep_MapSeed();
 
 protected:
 	// Called when the game starts or when spawned
@@ -114,7 +119,9 @@ protected:
 	//
 	// bool IsLocationBlocked(FIntPoint GridPos, int32 Layer, ASnakePawn* RequestingPawn);
 
-public:	
+public:
+	// replication function
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	// Called every frame
 	// virtual void Tick(float DeltaTime) override;
 	const int32 TotalLayers = 3;
@@ -122,8 +129,9 @@ public:
 
 	void GenerateGrid();
 	void ClearGrid();
-	void TryPlaceBridge();
-	void TryPlaceHole();
+	void WrapWalls();
+	void TryPlaceBridge(FRandomStream& Stream);
+	void TryPlaceHole(FRandomStream& Stream);
 
 	// Helper functions for indexing and 2D to 1D conversion
 	int32 GetIndex(int32 Xpos, int32 Ypos, int32 Zpos) const { return (Zpos * Width * Height) + (Ypos * Width) + Xpos; }
