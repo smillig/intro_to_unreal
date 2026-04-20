@@ -294,6 +294,21 @@ void ASnakePawn::AddSegment()
 	SegmentCount++;
 }
 
+void ASnakePawn::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	// This runs on the Server. We use a ClientRPC (built-in) 
+	// to tell the client to setup their input.
+	if (APlayerController* PC = Cast<APlayerController>(NewController))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(SnakeMappingContext, 0);
+		}
+	}
+}
+
 void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

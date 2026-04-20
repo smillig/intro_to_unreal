@@ -11,13 +11,13 @@
 
 ABattleSnakeGameMode::ABattleSnakeGameMode()
 {
+	// pawn will be handled in PostLogin
+ 	DefaultPawnClass = nullptr;
+	
 	// Point this GameMode to use your specific Battle classes
 	GameStateClass = ABattleSnakeGameState::StaticClass();
 	PlayerStateClass = ASnakePlayerState::StaticClass();
 	PlayerControllerClass = ASnakePlayerController::StaticClass();
-	
-	// pawn will be handled in PostLogin
-	DefaultPawnClass = nullptr;
 }
 
 FString ABattleSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
@@ -47,8 +47,48 @@ void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 {
 	Super::PostLogin(NewPlayerController);
     
+	// spawn here if seamless travel doesn't work
+	if (NewPlayerController->GetPawn() == nullptr)
+	{
+		SpawnSnakeForPlayer(NewPlayerController);
+	}
+	
+	// if relogging in or hard transition make sure name gets populated
+	if (FString* FoundName = PendingNames.Find(NewPlayerController))
+	{
+		ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
+		if (PS)
+		{
+			PS->SnakeName = *FoundName;
+			PS->OnRep_SnakeName();
+		}
+		PendingNames.Remove(NewPlayerController);
+	}
+	
+	// if (NewPlayerController)
+	// {
+	// 	// Get the PlayerState that just traveled from the Lobby
+	// 	ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
+	// 	
+	// 	if (PS)
+	// 	{
+	// 		// Now log the actual name the player chose in the menu
+	// 		UE_LOG(LogTemp, Log, TEXT("Snake [%s] has successfully arrived in the Battle!"), *PS->SnakeName);
+	// 	}
+	// 	else
+	// 	{
+	// 		UE_LOG(LogTemp, Warning, TEXT("A player arrived, but their PlayerState is missing!"));
+	// 	}
+	// }
+	
+}
+
+void ABattleSnakeGameMode::SpawnSnakeForPlayer(APlayerController* PC)
+{
+	if (!PC || !SnakePawnClass) return;
+	
 	// spawn position
-	AAGridGenerator* GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
+	GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
 	if (!GridGen) return;
 	
 	// get player index
@@ -59,11 +99,11 @@ void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 	FIntPoint SpawnGridPos;
 	switch (PlayerIdx)
 	{
-		case 0: SpawnGridPos = FIntPoint(5, 5); break;										// bottom left
-		case 1: SpawnGridPos = FIntPoint(GridGen->Width - 6, GridGen->Height - 6); break;	// top right
-		case 2: SpawnGridPos = FIntPoint(5, GridGen->Height - 6); break;					// top left
-		case 3: SpawnGridPos = FIntPoint(GridGen->Width - 6, 5); break;						// bottom right
-		default: SpawnGridPos = FIntPoint(GridGen->Width / 2, GridGen->Height / 2); break;	// default to center 
+	case 0: SpawnGridPos = FIntPoint(5, 5); break;										// bottom left
+	case 1: SpawnGridPos = FIntPoint(GridGen->Width - 6, GridGen->Height - 6); break;	// top right
+	case 2: SpawnGridPos = FIntPoint(5, GridGen->Height - 6); break;					// top left
+	case 3: SpawnGridPos = FIntPoint(GridGen->Width - 6, 5); break;						// bottom right
+	default: SpawnGridPos = FIntPoint(GridGen->Width / 2, GridGen->Height / 2); break;	// default to center 
 	}
 	
 	// convert grid to world position
@@ -85,37 +125,21 @@ void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 		
 		if (NewSnakePawn)
 		{
-			NewPlayerController->Possess(NewSnakePawn);
+			PC->Possess(NewSnakePawn);
 			
 			UE_LOG(LogTemp, Log, TEXT("Spawned player %d in grid %s at world space %s"), PlayerIdx, *SpawnGridPos.ToString(), *WorldSpawnLocation.ToString());
 		}
 	}
-	// if relogging in or hard transition make sure name gets populated
-	if (FString* FoundName = PendingNames.Find(NewPlayerController))
+}
+
+void ABattleSnakeGameMode::HandleSeamlessTravelPlayer(AController*& C)
+{
+	Super::HandleSeamlessTravelPlayer(C);
+    
+	// Convert Controller to PlayerController and spawn
+	APlayerController* PC = Cast<APlayerController>(C);
+	if (PC)
 	{
-		ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
-		if (PS)
-		{
-			PS->SnakeName = *FoundName;
-			PS->OnRep_SnakeName();
-		}
-		PendingNames.Remove(NewPlayerController);
+		SpawnSnakeForPlayer(PC);
 	}
-	
-	if (NewPlayerController)
-	{
-		// Get the PlayerState that just traveled from the Lobby
-		ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
-		
-		if (PS)
-		{
-			// Now log the actual name the player chose in the menu
-			UE_LOG(LogTemp, Log, TEXT("Snake [%s] has successfully arrived in the Battle!"), *PS->SnakeName);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("A player arrived, but their PlayerState is missing!"));
-		}
-	}
-	
 }

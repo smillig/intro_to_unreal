@@ -27,14 +27,14 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Game Rules")
 	TSubclassOf<AFoodActor> MushroomClass;
 	
+	UPROPERTY()
+	AAGridGenerator* GridGen;
+	
 public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnFood();
 	
 private:
-	UPROPERTY()
-	AAGridGenerator* GridGen;
-	
 	UPROPERTY()
 	ASnakePawn* SnakePawn;
 };

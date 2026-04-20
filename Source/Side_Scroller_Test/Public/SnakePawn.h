@@ -116,6 +116,7 @@ protected:
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void PossessedBy(AController* NewController) override;
 	
 	float MoveInterpolationProgress = 0.f;
 	bool bIsMovingToTarget = false;

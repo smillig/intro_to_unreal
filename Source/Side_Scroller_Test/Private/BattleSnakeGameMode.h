@@ -6,9 +6,7 @@
 #include "SnakeGameMode.h"
 #include "BattleSnakeGameMode.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class ABattleSnakeGameMode : public ASnakeGameMode
 {
@@ -26,5 +24,12 @@ public:
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	
 	// We override this to spawn a snake for every player that travels in
-	virtual void PostLogin(APlayerController* NewPlayerController) override;	
+	virtual void PostLogin(APlayerController* NewPlayerController) override;
+	
+	// This handles players traveling from the Lobby (Seamless Travel)
+	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
+
+private:
+	// Helper function so we don't repeat logic
+	void SpawnSnakeForPlayer(APlayerController* PC);
 };
