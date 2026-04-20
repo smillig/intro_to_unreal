@@ -19,6 +19,9 @@ protected:
 	
 public:
 	ABattleSnakeGameMode();
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<ASnakePawn> SnakePawnClass;
     
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	

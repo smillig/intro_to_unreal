@@ -109,6 +109,7 @@ protected:
 	// virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
+	virtual void PreInitializeComponents() override;
 	
 	// Map key is FIntPoint(X, Y), Value is a list of who is at what layer there
 	TMap<FIntPoint, TArray<FOccupancyData>> OccupancyMap;

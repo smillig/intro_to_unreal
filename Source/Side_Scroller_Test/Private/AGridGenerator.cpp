@@ -48,6 +48,12 @@ void AAGridGenerator::OnConstruction(const FTransform& Transform)
 	}
 }
 
+void AAGridGenerator::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+	GenerateGrid();
+}
+
 void AAGridGenerator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

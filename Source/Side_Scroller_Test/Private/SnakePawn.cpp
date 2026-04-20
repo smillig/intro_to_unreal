@@ -20,7 +20,9 @@ ASnakePawn::ASnakePawn()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickGroup = TG_PostPhysics;
 	
-	AutoPossessPlayer = EAutoReceiveInput::Player0;
+	bReplicates = true;
+	SetReplicateMovement(true);
+	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 	
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -56,60 +58,69 @@ ASnakePawn::ASnakePawn()
 void ASnakePawn::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	// Find the Grid Generator in the level
+	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass());
+	GridGen = Cast<AAGridGenerator>(FoundActor);
+	
+	if (HasAuthority())
+	{
+		FVector SpawnLocation = GetActorLocation();
+		CurrentGridLocation.X = FMath::RoundToInt(SpawnLocation.X / TileSize);
+		CurrentGridLocation.Y = FMath::RoundToInt(SpawnLocation.Y / TileSize);
+		CurrentLayer = 1; // Battle default
+
+		// Snap to perfect center of tile on the Server
+		float GridBaseZ = 0.0f;
+		if (GridGen && GridGen->GridData.Num() > 0)
+		{
+			int32 Idx = GridGen->GetIndex(CurrentGridLocation.X, CurrentGridLocation.Y, CurrentLayer);
+			if (GridGen->GridData.IsValidIndex(Idx)) GridBaseZ = GridGen->GridData[Idx].ZOffset;
+		}
+		
+		FVector SnappedLoc = FVector(CurrentGridLocation.X * TileSize, CurrentGridLocation.Y * TileSize, GridBaseZ + VerticalOffset);
+		SetActorLocation(SnappedLoc);
+		
+		// Initialize server-side movement variables
+		StepStartWorldLocation = SnappedLoc;
+		StepTargetWorldLocation = SnappedLoc;
+	}
 	// debugging
 	// if (GridGen) {
 	// 	UE_LOG(LogTemp, Warning, TEXT("Grid initialized with %d cells"), GridGen->GridData.Num());
 	// }
-	// Find the Grid Generator in the level
-	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass());
-	GridGen = Cast<AAGridGenerator>(FoundActor);
-	HeadMeshComponent->SetHiddenInGame(true);
 	
-	FVector SpawnLocation = GetActorLocation();
-
-	// Initialize logic positions based on spawn
-	CurrentGridLocation.X = FMath::RoundToInt(SpawnLocation.X / TileSize);
-	CurrentGridLocation.Y = FMath::RoundToInt(SpawnLocation.Y / TileSize);
-	CurrentLayer = 1;
+	FVector FinalLoc = GetActorLocation();
+	CurrentGridLocation.X = FMath::RoundToInt(FinalLoc.X / TileSize);
+	CurrentGridLocation.Y = FMath::RoundToInt(FinalLoc.Y / TileSize);
 	
-	// get the grids z height for cell
-	int32 Idx = GridGen->GetIndex(CurrentGridLocation.X, CurrentGridLocation.Y, CurrentLayer);
-	float GridBaseZ = 0.0f;
-	if (GridGen->GridData.IsValidIndex(Idx))
-	{
-		GridBaseZ = GridGen->GridData[Idx].ZOffset;
-	}
-	
-	// snap pawn to location
-	FVector SnappedLocation = FVector(CurrentGridLocation.X * TileSize, CurrentGridLocation.Y * TileSize, GridBaseZ + VerticalOffset);
-		
-	SetActorLocation(SnappedLocation);
-	StepStartWorldLocation = SnappedLocation;
-	StepTargetWorldLocation = SnappedLocation; 
-	SegmentLocations.Add(SnappedLocation);
-	
-	// start with just head
 	SegmentLocations.Empty();
-	SegmentLocations.Add(SnappedLocation);
+	SegmentLocations.Add(FinalLoc);
 
-	if (APlayerController* PlayerCont = Cast<APlayerController>(GetController()))
+	// LOCAL PLAYER ONLY: Setup Input and Camera
+	// IsLocallyControlled() is true for the Host on their window, 
+	// and true for the Client on their window.
+	if (IsLocallyControlled())
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerCont->GetLocalPlayer()))
+		if (APlayerController* PC = Cast<APlayerController>(GetController()))
 		{
-			Subsystem->AddMappingContext(SnakeMappingContext, 0);
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+			{
+				Subsystem->AddMappingContext(SnakeMappingContext, 0);
+			}
 		}
 	}
 	
+	// Initial Directions (Must match on both for the first Tick)
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
-	SetActorRotation(FRotator(0.f, -90.f, 0.f));
-	HeadStartRotation = GetActorRotation();
-	HeadTargetRotation = GetActorRotation();
-	HandleDirectionChange();
+	UpdateDirection(CurrentDirection);
 	
-	// player starts moving immediatly
-	bIsMovingToTarget = false;
-	MoveTimer = MoveInterval;
+	if (HeadMeshComponent) 
+	{
+		HeadMeshComponent->SetHiddenInGame(true);
+		HeadMeshComponent->SetWorldRotation(HeadTargetRotation);
+	}
 }
 
 // Called every frame
