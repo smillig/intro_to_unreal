@@ -27,12 +27,6 @@ void ASnakePlayerController::Server_LeaveLobby_Implementation()
 {
 	if (!IsLocalController())
 	{
-		// This tells the server to destroy this controller and its PlayerState immediately
-        // if (GetWorld() && GetWorld()->GetAuthGameMode())
-        // {
-        // 	GetWorld()->GetAuthGameMode()->Logout(this);
-        // }
-        
         // Destroy the clients controller on the server
         Destroy();
 	}

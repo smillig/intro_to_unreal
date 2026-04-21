@@ -10,6 +10,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
@@ -62,60 +63,28 @@ void ASnakePawn::BeginPlay()
 	// Find the Grid Generator in the level
 	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass());
 	GridGen = Cast<AAGridGenerator>(FoundActor);
-	
-	if (HasAuthority())
-	{
-		FVector SpawnLocation = GetActorLocation();
-		CurrentGridLocation.X = FMath::RoundToInt(SpawnLocation.X / TileSize);
-		CurrentGridLocation.Y = FMath::RoundToInt(SpawnLocation.Y / TileSize);
-		CurrentLayer = 1; // Battle default
 
-		// Snap to perfect center of tile on the Server
-		float GridBaseZ = 0.0f;
-		if (GridGen && GridGen->GridData.Num() > 0)
-		{
-			int32 Idx = GridGen->GetIndex(CurrentGridLocation.X, CurrentGridLocation.Y, CurrentLayer);
-			if (GridGen->GridData.IsValidIndex(Idx)) GridBaseZ = GridGen->GridData[Idx].ZOffset;
-		}
-		
-		FVector SnappedLoc = FVector(CurrentGridLocation.X * TileSize, CurrentGridLocation.Y * TileSize, GridBaseZ + VerticalOffset);
-		SetActorLocation(SnappedLoc);
-		
-		// Initialize server-side movement variables
-		StepStartWorldLocation = SnappedLoc;
-		StepTargetWorldLocation = SnappedLoc;
-	}
-	// debugging
-	// if (GridGen) {
-	// 	UE_LOG(LogTemp, Warning, TEXT("Grid initialized with %d cells"), GridGen->GridData.Num());
-	// }
+	// Engine spawn location from game mode
+	FVector SpawnLocation = GetActorLocation();
+	CurrentGridLocation.X = FMath::RoundToInt(SpawnLocation.X / TileSize);
+	CurrentGridLocation.Y = FMath::RoundToInt(SpawnLocation.Y / TileSize);
 	
-	FVector FinalLoc = GetActorLocation();
-	CurrentGridLocation.X = FMath::RoundToInt(FinalLoc.X / TileSize);
-	CurrentGridLocation.Y = FMath::RoundToInt(FinalLoc.Y / TileSize);
-	
+	StepStartWorldLocation = SpawnLocation;
+	StepTargetWorldLocation = SpawnLocation;
 	SegmentLocations.Empty();
-	SegmentLocations.Add(FinalLoc);
+	SegmentLocations.Add(SpawnLocation);
 
-	// LOCAL PLAYER ONLY: Setup Input and Camera
-	// IsLocallyControlled() is true for the Host on their window, 
-	// and true for the Client on their window.
+	// Handle Input/Camera (Local Player Only)
 	if (IsLocallyControlled())
 	{
-		if (APlayerController* PC = Cast<APlayerController>(GetController()))
-		{
-			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-			{
-				Subsystem->AddMappingContext(SnakeMappingContext, 0);
-			}
-		}
+		// This sets the Input Mode and Mapping Context
+		PawnClientRestart(); 
 	}
-	
-	// Initial Directions (Must match on both for the first Tick)
+
+	// 4. Visuals
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
 	UpdateDirection(CurrentDirection);
-	
 	if (HeadMeshComponent) 
 	{
 		HeadMeshComponent->SetHiddenInGame(true);
@@ -251,7 +220,6 @@ void ASnakePawn::GridMove(float DeltaTime)
 			SegmentLocations[i] = SegmentLocations[i - 1];
 		}
 		SegmentLocations[0] = StepStartWorldLocation; // Where the head just came from
-
 		
 		// reached the target grid location
 		CurrentGridLocation = PendingNextGridLocation;
@@ -294,18 +262,47 @@ void ASnakePawn::AddSegment()
 	SegmentCount++;
 }
 
+void ASnakePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASnakePawn, SegmentCount);
+	DOREPLIFETIME(ASnakePawn, SegmentLocations);
+}
+
 void ASnakePawn::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
 	// This runs on the Server. We use a ClientRPC (built-in) 
-	// to tell the client to setup their input.
+	// to tell the client to set up their input.
 	if (APlayerController* PC = Cast<APlayerController>(NewController))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(SnakeMappingContext, 0);
 		}
+	}
+}
+
+void ASnakePawn::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->SetViewTarget(this);
+		
+		// Setup Input Context
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			Subsystem->ClearAllMappings();
+			Subsystem->AddMappingContext(SnakeMappingContext, 0);
+		}
+
+		// Tell the engine to stop looking for UI and start looking at the Game
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = false;
 	}
 }
 
@@ -339,40 +336,43 @@ void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 }
 
+void ASnakePawn::Server_SetRequestedDirection_Implementation(ESnakeDirection NewDirection)
+{
+	if (IsValidTurn(NewDirection))
+	{
+		RequestedDirection = NewDirection;
+	}
+}
+
 void ASnakePawn::Input_TryTurnUp(const FInputActionValue& Value)
 {
-	bool bPressed = Value.Get<bool>();
-	if (bPressed)
+	if (Value.Get<bool>())
 	{
-
-		RequestedDirection = ESnakeDirection::Up;
+		Server_SetRequestedDirection(ESnakeDirection::Up);
 	}
 }
 
 void ASnakePawn::Input_TryTurnDown(const FInputActionValue& Value)
 {
-	bool bPressed = Value.Get<bool>();
-	if (bPressed)
+	if (Value.Get<bool>())
 	{
-		RequestedDirection = ESnakeDirection::Down;
+		Server_SetRequestedDirection(ESnakeDirection::Down);
 	}
 }
 
 void ASnakePawn::Input_TryTurnLeft(const FInputActionValue& Value)
 {
-	bool bPressed = Value.Get<bool>();
-	if (bPressed)
+	if (Value.Get<bool>())
 	{
-		RequestedDirection = ESnakeDirection::Left;
+		Server_SetRequestedDirection(ESnakeDirection::Left);
 	}
 }
 
 void ASnakePawn::Input_TryTurnRight(const FInputActionValue& Value)
 {
-	bool bPressed = Value.Get<bool>();
-	if (bPressed)
+	if (Value.Get<bool>())
 	{
-		RequestedDirection = ESnakeDirection::Right;
+		Server_SetRequestedDirection(ESnakeDirection::Right);
 	}
 }
 
@@ -524,6 +524,15 @@ void ASnakePawn::ResetSnake()
 	SnakeSpline->UpdateSpline();
 	bIsMovingToTarget = false;
     bIsDead = false;
+	Client_ResetLogic(GetActorLocation());
+}
+
+void ASnakePawn::Client_ResetLogic_Implementation(FVector NewLoc)
+{
+	SnakeHistory.Empty();
+	SnakeHistory.Add(NewLoc);
+	SnakeHistory.Add(NewLoc);
+	// This clears the "stretching" spline on the client's screen
 }
 
 FIntPoint ASnakePawn::GetClampedStartGridPosition() const

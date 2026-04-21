@@ -33,9 +33,11 @@ void AFoodActor::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 {
 	if (ASnakePawn* SnakePawn = Cast<ASnakePawn>(OtherActor))
 	{
+		// send message to game mode to then handle snake adding segment
 		SnakePawn->AddSegment(); // could pass snake ScoreValue to grow or shrink
 		UE_LOG(LogTemp, Log, TEXT("Ate a food worth %d points"), ScoreValue);
 		// spawn new food
+		
 		if (ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			GM->SpawnFood();

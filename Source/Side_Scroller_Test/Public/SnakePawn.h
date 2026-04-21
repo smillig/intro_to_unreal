@@ -96,8 +96,12 @@ protected:
 	UPROPERTY()
 	AAGridGenerator* GridGen;
 	// Grid coordinates of snake
+	// might need to move or reference in grid for server auth
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake Logic")
 	TArray<FVector> SegmentLocations; 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake Logic")
 	int32 SegmentCount = 0;
+	
 	TArray<FVector> SnakeHistory;
 	TArray<UStaticMeshComponent*> BodyParts;
 	float VerticalOffset = 65.0f;
@@ -116,7 +120,9 @@ protected:
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void PossessedBy(AController* NewController) override;
+	
+	// replication
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	float MoveInterpolationProgress = 0.f;
 	bool bIsMovingToTarget = false;
@@ -154,5 +160,11 @@ public:
 	// For hooking in blueprints when eating food
 	UFUNCTION(BlueprintCallable)
 	void AddSegment();
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void PawnClientRestart() override;
 
+	UFUNCTION(Server, Reliable)
+	void Server_SetRequestedDirection(ESnakeDirection NewDirection);
+	UFUNCTION(Client, Reliable)
+	void Client_ResetLogic(FVector NewLocation);
 };

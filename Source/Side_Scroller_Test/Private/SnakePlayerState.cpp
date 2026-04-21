@@ -22,4 +22,5 @@ void ASnakePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASnakePlayerState, SnakeName);
+	DOREPLIFETIME(ASnakePlayerState, SpawnIndex);
 }

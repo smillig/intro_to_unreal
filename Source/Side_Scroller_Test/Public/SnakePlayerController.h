@@ -19,6 +19,6 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowLobbyUI(TSubclassOf<ULobbyUserWidget> WidgetClass);
 	
-	UFUNCTION(Client, Reliable)
+	UFUNCTION(Server, Reliable)
 	void Server_LeaveLobby();
 };

@@ -16,6 +16,9 @@ public:
 	// The variable we want to share across the network
 	UPROPERTY(ReplicatedUsing = OnRep_SnakeName, BlueprintReadOnly, Category = "Snake")
 	FString SnakeName;
+	
+	UPROPERTY(Replicated)
+	int32 SpawnIndex = -1;
 
 	UFUNCTION()
 	void OnRep_SnakeName();

@@ -31,4 +31,6 @@ private:
 	// A map to store names tied to the player's unique ID until they are ready
 	UPROPERTY()
 	TMap<APlayerController*, FString> PendingNames;	
+	
+	int32 NextSpawnIndex = 0;
 };

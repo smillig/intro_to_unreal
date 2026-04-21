@@ -15,21 +15,20 @@ protected:
 	UPROPERTY()
 	TMap<APlayerController*, FString> PendingNames;
 	
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 public:
 	ABattleSnakeGameMode();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<ASnakePawn> SnakePawnClass;
-    
-	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	
 	// We override this to spawn a snake for every player that travels in
 	virtual void PostLogin(APlayerController* NewPlayerController) override;
 	
-	// This handles players traveling from the Lobby (Seamless Travel)
-	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 private:
 	// Helper function so we don't repeat logic
-	void SpawnSnakeForPlayer(APlayerController* PC);
+	// void SpawnSnakeForPlayer(APlayerController* PC);
+
+	int32 NextStartIndex;
+	
+	int32 PlayersSpawnedCount = 0;
 };

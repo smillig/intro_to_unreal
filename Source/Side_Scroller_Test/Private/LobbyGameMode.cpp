@@ -27,6 +27,7 @@ void ALobbyGameMode::BeginPlay()
 	{
 		if (HostPC && PS)
 		{
+			PS->SpawnIndex = 0;
 			PS->SnakeName = GI->UserPlayerName;
 			PS->OnRep_SnakeName();
 		}
@@ -68,10 +69,12 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 	if (FString* FoundName = PendingNames.Find(NewPlayerController))
 	{
 		ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
-		if (PS)
+		if (PS && PS->SpawnIndex == -1)
 		{
 			PS->SnakeName = *FoundName;
 			PS->OnRep_SnakeName();
+			PS->SpawnIndex = NextSpawnIndex++;
+			UE_LOG(LogTemp, Warning, TEXT("Assigned %s to SpawnIndex %d"), *PS->SnakeName, PS->SpawnIndex);
 		}
 		// Clean up
 		PendingNames.Remove(NewPlayerController);
