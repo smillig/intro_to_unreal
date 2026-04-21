@@ -16,10 +16,36 @@ void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobb
 			LobbyWidget->AddToViewport();
 
 			bShowMouseCursor = true;
-			FInputModeUIOnly InputMode;
+			FInputModeGameAndUI InputMode;
 			InputMode.SetWidgetToFocus(LobbyWidget->TakeWidget());
 			SetInputMode(InputMode);
 		}
+	}
+}
+
+void ASnakePlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	UE_LOG(LogTemp, Warning, TEXT("OnPossess: %s"), *GetNameSafe(InPawn));
+
+	SetViewTargetWithBlend(InPawn);
+
+	// Restore game input here (important after lobby)
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
+	bShowMouseCursor = false;
+}
+
+void ASnakePlayerController::OnRep_Pawn()
+{
+	Super::OnRep_Pawn();
+
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_Pawn: %s"), *GetNameSafe(GetPawn()));
+
+	if (GetPawn())
+	{
+		SetViewTargetWithBlend(GetPawn());
 	}
 }
 
@@ -27,8 +53,9 @@ void ASnakePlayerController::Server_LeaveLobby_Implementation()
 {
 	if (!IsLocalController())
 	{
-        // Destroy the clients controller on the server
-        Destroy();
+		// GameMode->Logout(this);
+		// ClientTravel(TEXT("/Game/Maps/MainMenu"), ETravelType::TRAVEL_Absolute);
+		Destroy();
 	}
 	
 }

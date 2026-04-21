@@ -22,6 +22,7 @@ ASnakePawn::ASnakePawn()
 	PrimaryActorTick.TickGroup = TG_PostPhysics;
 	
 	bReplicates = true;
+	SetReplicates(true);
 	SetReplicateMovement(true);
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 	
@@ -75,11 +76,11 @@ void ASnakePawn::BeginPlay()
 	SegmentLocations.Add(SpawnLocation);
 
 	// Handle Input/Camera (Local Player Only)
-	if (IsLocallyControlled())
-	{
-		// This sets the Input Mode and Mapping Context
-		PawnClientRestart(); 
-	}
+	// if (IsLocallyControlled())
+	// {
+	// 	// This sets the Input Mode and Mapping Context
+	// 	PawnClientRestart(); 
+	// }
 
 	// 4. Visuals
 	CurrentDirection = ESnakeDirection::Up;
@@ -288,22 +289,22 @@ void ASnakePawn::PawnClientRestart()
 {
 	Super::PawnClientRestart();
 
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		PC->SetViewTarget(this);
-		
-		// Setup Input Context
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-		{
-			Subsystem->ClearAllMappings();
-			Subsystem->AddMappingContext(SnakeMappingContext, 0);
-		}
-
-		// Tell the engine to stop looking for UI and start looking at the Game
-		FInputModeGameOnly InputMode;
-		PC->SetInputMode(InputMode);
-		PC->bShowMouseCursor = false;
-	}
+	// if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	// {
+	// 	PC->SetViewTarget(this);
+	// 	
+	// 	// Setup Input Context
+	// 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+	// 	{
+	// 		Subsystem->ClearAllMappings();
+	// 		Subsystem->AddMappingContext(SnakeMappingContext, 0);
+	// 	}
+	//
+	// 	// Tell the engine to stop looking for UI and start looking at the Game
+	// 	FInputModeGameOnly InputMode;
+	// 	PC->SetInputMode(InputMode);
+	// 	PC->bShowMouseCursor = false;
+	// }
 }
 
 void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

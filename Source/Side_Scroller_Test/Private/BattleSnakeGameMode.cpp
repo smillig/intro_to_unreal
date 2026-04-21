@@ -17,6 +17,48 @@ ABattleSnakeGameMode::ABattleSnakeGameMode()
 	PlayerControllerClass = ASnakePlayerController::StaticClass();
 }
 
+void ABattleSnakeGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GetWorldTimerManager().SetTimer(
+	SpawnTimerHandle,
+	this,
+	&ABattleSnakeGameMode::StartMatchSpawning,
+	1.0f,   // ← 1 second delay (you can even try 2.0f)
+	false);
+}
+
+void ABattleSnakeGameMode::StartMatchSpawning()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Starting delayed spawn"));
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PC = Cast<APlayerController>(*It);
+		if (!PC) continue;
+
+		ASnakePlayerState* PS = PC->GetPlayerState<ASnakePlayerState>();
+
+		if (!PS)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("NO PlayerState yet for %s"), *PC->GetName());
+			continue;
+		}
+
+		if (PS->SpawnIndex < 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Assigning SpawnIndex late for %s"), *PC->GetName());
+			PS->SpawnIndex = NextStartIndex++;
+		}
+
+		if (PC->GetPawn() == nullptr)
+		{
+			RestartPlayer(PC);
+		}
+	}
+}
+
 FString ABattleSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
 {
 	// Does not appear to fire InitNewPlayer in seamless trave mode
@@ -50,15 +92,81 @@ FString ABattleSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerControll
 	return ErrorMessage;
 }
 
+void ABattleSnakeGameMode::HandleSeamlessTravelPlayer(AController*& Contr)
+{
+	Super::HandleSeamlessTravelPlayer(Contr);
+	
+	if (!Contr) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("Player arrived: %s"), *Contr->GetName());
+
+	ReadyPlayers.Add(Contr);
+
+	// Start spawn once ALL players are here
+	if (ReadyPlayers.Num() >= ExpectedPlayerCount) // for now: 2
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Starting delayed spawn"));
+
+		GetWorldTimerManager().SetTimer(
+			SpawnTimerHandle,
+			this,
+			&ABattleSnakeGameMode::SpawnAllPlayers,
+			2.0f,
+			false
+		);
+	}
+}
+
+void ABattleSnakeGameMode::SpawnAllPlayers()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Spawning all players"));
+
+	for (AController* Controller : ReadyPlayers)
+	{
+		if (!Controller) continue;
+
+		ASnakePlayerState* PS = Controller->GetPlayerState<ASnakePlayerState>();
+
+		if (!PS || PS->SpawnIndex < 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Skipping player - invalid state"));
+			continue;
+		}
+
+		RestartPlayer(Controller);
+	}
+}
+AActor* ABattleSnakeGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+	ASnakePlayerState* PS = Player->GetPlayerState<ASnakePlayerState>();
+    
+	int32 IndexToUse = (PS && PS->SpawnIndex != -1) ? PS->SpawnIndex : 0;
+
+	FName TargetTag = FName(*FString::Printf(TEXT("Start%d"), IndexToUse));
+	
+	if (!PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No PlayerState for %s"), *Player->GetName());
+	}
+
+	if (PS && PS->SpawnIndex == -1)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid SpawnIndex for %s"), *Player->GetName());
+	}
+
+	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server: Handed out %s to %s"), *TargetTag.ToString(), *Player->GetName());
+		if (It->PlayerStartTag == TargetTag) return *It;
+	}
+
+	return Super::ChoosePlayerStart_Implementation(Player);
+	
+}
+
 void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 {
 	Super::PostLogin(NewPlayerController);
-    
-	// spawn here if seamless travel doesn't work
-	// if (NewPlayerController->GetPawn() == nullptr)
-	// {
-	// 	SpawnSnakeForPlayer(NewPlayerController);
-	// }
 	
 	// if relogging in or hard transition make sure name gets populated
 	if (FString* FoundName = PendingNames.Find(NewPlayerController))
@@ -68,26 +176,11 @@ void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 		{
 			PS->SnakeName = *FoundName;
 			PS->OnRep_SnakeName();
+			PS->SpawnIndex = NextStartIndex++;
+			UE_LOG(LogTemp, Warning, TEXT("Assigned SpawnIndex %d"), PS->SpawnIndex);
 		}
 		PendingNames.Remove(NewPlayerController);
-	}
-	
-	// if (NewPlayerController)
-	// {
-	// 	// Get the PlayerState that just traveled from the Lobby
-	// 	ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
-	// 	
-	// 	if (PS)
-	// 	{
-	// 		// Now log the actual name the player chose in the menu
-	// 		UE_LOG(LogTemp, Log, TEXT("Snake [%s] has successfully arrived in the Battle!"), *PS->SnakeName);
-	// 	}
-	// 	else
-	// 	{
-	// 		UE_LOG(LogTemp, Warning, TEXT("A player arrived, but their PlayerState is missing!"));
-	// 	}
-	// }
-	
+	}	
 }
 
 // void ABattleSnakeGameMode::SpawnSnakeForPlayer(APlayerController* PC)
@@ -123,20 +216,3 @@ void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 // 										SpawnGridPos.Y * GridGen->TileSize, Zposition + 100.0f);
 // }
 
-AActor* ABattleSnakeGameMode::ChoosePlayerStart_Implementation(AController* Player)
-{
-	ASnakePlayerState* PS = Player->GetPlayerState<ASnakePlayerState>();
-    
-	int32 IndexToUse = (PS && PS->SpawnIndex != -1) ? PS->SpawnIndex : 0;
-
-	FName TargetTag = FName(*FString::Printf(TEXT("Start%d"), IndexToUse));
-
-	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Server: Handed out %s to %s"), *TargetTag.ToString(), *Player->GetName());
-		if (It->PlayerStartTag == TargetTag) return *It;
-	}
-
-	return Super::ChoosePlayerStart_Implementation(Player);
-	
-}

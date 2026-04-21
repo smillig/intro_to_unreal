@@ -16,6 +16,9 @@ protected:
 	TMap<APlayerController*, FString> PendingNames;
 	
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+	
+	virtual void BeginPlay() override;
+	
 public:
 	ABattleSnakeGameMode();
 	
@@ -24,11 +27,22 @@ public:
 	
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
+	virtual void HandleSeamlessTravelPlayer(AController*& Contr) override;
+	
 private:
-	// Helper function so we don't repeat logic
-	// void SpawnSnakeForPlayer(APlayerController* PC);
+	FTimerHandle SpawnTimerHandle;
 
-	int32 NextStartIndex;
+	int32 NextStartIndex = 0;
 	
 	int32 PlayersSpawnedCount = 0;
+	
+	void StartMatchSpawning();
+	
+	UPROPERTY()
+	TArray<AController*> ReadyPlayers;
+	
+	void SpawnAllPlayers();
+	
+	UPROPERTY(EditDefaultsOnly, Category="Match")
+	int32 ExpectedPlayerCount = 2;
 };

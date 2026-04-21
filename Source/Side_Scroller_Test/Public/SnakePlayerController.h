@@ -7,9 +7,6 @@
 #include "LobbyUserWidget.h"
 #include "SnakePlayerController.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class SIDE_SCROLLER_TEST_API ASnakePlayerController : public APlayerController
 {
@@ -21,4 +18,9 @@ public:
 	
 	UFUNCTION(Server, Reliable)
 	void Server_LeaveLobby();
+	
+	virtual void OnRep_Pawn() override;
+	
+protected:	
+	virtual void OnPossess(APawn* Pawn) override;
 };
