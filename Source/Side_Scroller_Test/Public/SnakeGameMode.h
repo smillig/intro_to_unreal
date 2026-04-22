@@ -34,7 +34,4 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnFood();
 	
-private:
-	UPROPERTY()
-	ASnakePawn* SnakePawn;
 };

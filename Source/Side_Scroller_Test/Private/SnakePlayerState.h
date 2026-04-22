@@ -19,6 +19,9 @@ public:
 	
 	UPROPERTY(Replicated)
 	int32 SpawnIndex = -1;
+	
+	UPROPERTY(Replicated)
+	int32 PlayerSlotID = -1;
 
 	UFUNCTION()
 	void OnRep_SnakeName();

@@ -109,7 +109,10 @@ protected:
 	float MoveTimer;
 	int32 CurrentLayer = 0;
 	bool bIsMovementLocked = false;
+	UPROPERTY(ReplicatedUsing= OnRep_CurrentDirection, BlueprintReadOnly, Category = "Snake Logic")
 	ESnakeDirection CurrentDirection = ESnakeDirection::Up;
+	UFUNCTION()
+	void OnRep_CurrentDirection();
 	ESnakeDirection RequestedDirection = ESnakeDirection::Up;
 	FIntPoint CurrentGridLocation = FIntPoint(0, 0);
 	FIntPoint PendingNextGridLocation = FIntPoint(0, 0);

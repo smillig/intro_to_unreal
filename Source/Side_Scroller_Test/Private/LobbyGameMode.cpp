@@ -13,6 +13,8 @@ ALobbyGameMode::ALobbyGameMode()
 	GameStateClass = ASnakeGameState::StaticClass();
 	PlayerStateClass = ASnakePlayerState::StaticClass();
 	PlayerControllerClass = ASnakePlayerController::StaticClass();
+	
+	bUseSeamlessTravel = false;
 }
 
 void ALobbyGameMode::BeginPlay()
@@ -27,7 +29,6 @@ void ALobbyGameMode::BeginPlay()
 	{
 		if (HostPC && PS)
 		{
-			PS->SpawnIndex = 0;
 			PS->SnakeName = GI->UserPlayerName;
 			PS->OnRep_SnakeName();
 		}
@@ -36,7 +37,7 @@ void ALobbyGameMode::BeginPlay()
 			GS->ServerDisplayIP = GI->HostIPAddress;
 		}
 	}
-	bUseSeamlessTravel = true;
+	// bUseSeamlessTravel = true;
 }
 
 FString ALobbyGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
@@ -69,12 +70,10 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 	if (FString* FoundName = PendingNames.Find(NewPlayerController))
 	{
 		ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
-		if (PS && PS->SpawnIndex == -1)
+		if (PS)
 		{
 			PS->SnakeName = *FoundName;
 			PS->OnRep_SnakeName();
-			PS->SpawnIndex = NextSpawnIndex++;
-			UE_LOG(LogTemp, Warning, TEXT("Assigned %s to SpawnIndex %d"), *PS->SnakeName, PS->SpawnIndex);
 		}
 		// Clean up
 		PendingNames.Remove(NewPlayerController);
@@ -92,8 +91,6 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayerController)
 void ALobbyGameMode::StartGame(EPlayMode PlayMode)
 {
 	if (!HasAuthority()) return;
-	
-	bUseSeamlessTravel = true;
 
 	FString MapName = (PlayMode == EPlayMode::BattleRoyale) ? TEXT("Lvl_SnakeBattle1") : TEXT("Lvl_Coop1");
     

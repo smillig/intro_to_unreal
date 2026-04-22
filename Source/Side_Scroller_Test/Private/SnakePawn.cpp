@@ -97,7 +97,12 @@ void ASnakePawn::BeginPlay()
 void ASnakePawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	if (!GridGen)
+	{
+		GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
+	}
+	
 	if (bIsDead || !GridGen || !SnakeSpline) return;
 
 	// Run the movement logic every frame for smooth interpolation
@@ -106,6 +111,15 @@ void ASnakePawn::Tick(float DeltaTime)
 	// breadcrumbs for snake history
 	FVector CurrentHeadLocation = GetActorLocation();
 
+	if (!HasAuthority())
+	{
+		// Client smooth head rotation (Client-side visual prediction)
+		FQuat CurrentRot = HeadMeshComponent->GetComponentRotation().Quaternion();
+		FQuat TargetRot = HeadTargetRotation.Quaternion();
+		FQuat NewRot = FQuat::Slerp(CurrentRot, TargetRot, 15.0f * DeltaTime);
+		HeadMeshComponent->SetWorldRotation(NewRot);
+	}
+	
 	if (SnakeHistory.Num() < 2)
 	{
 		SnakeHistory.Empty();
@@ -268,43 +282,44 @@ void ASnakePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASnakePawn, SegmentCount);
 	DOREPLIFETIME(ASnakePawn, SegmentLocations);
+	DOREPLIFETIME(ASnakePawn, CurrentDirection);
+}
+
+void ASnakePawn::OnRep_CurrentDirection()
+{
+	UpdateDirection(CurrentDirection);
 }
 
 void ASnakePawn::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
-	// This runs on the Server. We use a ClientRPC (built-in) 
-	// to tell the client to set up their input.
-	if (APlayerController* PC = Cast<APlayerController>(NewController))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(SnakeMappingContext, 0);
-		}
-	}
+	
 }
 
 void ASnakePawn::PawnClientRestart()
 {
 	Super::PawnClientRestart();
 
-	// if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	// {
-	// 	PC->SetViewTarget(this);
-	// 	
-	// 	// Setup Input Context
-	// 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-	// 	{
-	// 		Subsystem->ClearAllMappings();
-	// 		Subsystem->AddMappingContext(SnakeMappingContext, 0);
-	// 	}
-	//
-	// 	// Tell the engine to stop looking for UI and start looking at the Game
-	// 	FInputModeGameOnly InputMode;
-	// 	PC->SetInputMode(InputMode);
-	// 	PC->bShowMouseCursor = false;
-	// }
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC || !PC->IsLocalController()) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("PawnClientRestart LOCAL OK"));
+
+	// CAMERA
+	PC->SetViewTarget(this);
+
+	// INPUT MODE
+	FInputModeGameOnly InputMode;
+	PC->SetInputMode(InputMode);
+	PC->bShowMouseCursor = false;
+
+	// INPUT MAPPING (THIS is the critical fix)
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+	{
+		Subsystem->ClearAllMappings();
+		Subsystem->AddMappingContext(SnakeMappingContext, 0);
+	}
 }
 
 void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -349,6 +364,7 @@ void ASnakePawn::Input_TryTurnUp(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("SnakePawn::Input_TryTurnUp"));
 		Server_SetRequestedDirection(ESnakeDirection::Up);
 	}
 }

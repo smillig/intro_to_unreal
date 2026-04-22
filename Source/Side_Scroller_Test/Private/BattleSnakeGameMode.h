@@ -15,7 +15,7 @@ protected:
 	UPROPERTY()
 	TMap<APlayerController*, FString> PendingNames;
 	
-	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+	// virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	
 	virtual void BeginPlay() override;
 	
@@ -24,6 +24,8 @@ public:
 	
 	// We override this to spawn a snake for every player that travels in
 	virtual void PostLogin(APlayerController* NewPlayerController) override;
+	
+	// virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
@@ -36,12 +38,10 @@ private:
 	
 	int32 PlayersSpawnedCount = 0;
 	
-	void StartMatchSpawning();
+	int32 NextSlotID = 0;
 	
 	UPROPERTY()
 	TArray<AController*> ReadyPlayers;
-	
-	void SpawnAllPlayers();
 	
 	UPROPERTY(EditDefaultsOnly, Category="Match")
 	int32 ExpectedPlayerCount = 2;

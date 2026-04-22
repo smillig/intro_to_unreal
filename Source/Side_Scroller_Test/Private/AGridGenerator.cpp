@@ -3,9 +3,7 @@
 
 #include "AGridGenerator.h"
 #include "Components/InstancedStaticMeshComponent.h"
-#include "Math/TransformCalculus3D.h"
 #include "Net/UnrealNetwork.h"
-#include "Util/GridIndexing3.h"
 
 // Sets default values
 AAGridGenerator::AAGridGenerator()

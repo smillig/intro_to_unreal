@@ -6,6 +6,7 @@
 #include "SnakePawn.h"
 #include "FoodActor.h"
 #include "Kismet/GameplayStatics.h"
+#include "EngineUtils.h"
 
 void ASnakeGameMode::BeginPlay()
 {
@@ -13,27 +14,34 @@ void ASnakeGameMode::BeginPlay()
 	
 	// Find managers
 	GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
-	SnakePawn = Cast<ASnakePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	
 	SpawnFood();
 }
 
 void ASnakeGameMode::SpawnFood()
 {
-	if (!GridGen || !SnakePawn) return;
+	if (!GridGen) return;
 	
 	// get cells that food can spawn on
 	TArray<FIntPoint> WalkableCells = GridGen->GetWalkableCells(0);
 	
-	// remove points that snake occupies
-	TArray<FIntPoint> SnakeHead = SnakePawn->GetOccupiedCells();
-	TSet<FIntPoint> SnakeSet(SnakeHead);
-	// remove SnakeHead points from WalkableCells
+	TSet<FIntPoint> OccupiedCellsSet;
+	
+	for (TActorIterator<ASnakePawn> It(GetWorld()); It; ++It)
+	{
+		ASnakePawn* Pawn = *It;
+		if (Pawn)
+		{
+			OccupiedCellsSet.Append(Pawn->GetOccupiedCells());
+		}
+	}
+	
+	// remove occupied points from WalkableCells
 	int32 WriteIndex = 0;
 	for (int32 ReadIndex = 0; ReadIndex < WalkableCells.Num(); ReadIndex++)
 	{
 		const FIntPoint& Cell = WalkableCells[ReadIndex];
-		if (!SnakeSet.Contains(Cell))
+		if (!OccupiedCellsSet.Contains(Cell))
 		{
 			WalkableCells[WriteIndex++] = Cell;
 		}

@@ -2,8 +2,8 @@
 
 
 #include "SnakePlayerController.h"
-#include "GameFramework/GameModeBase.h"
 #include "Blueprint/UserWidget.h"
+
 
 void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobbyUserWidget> WidgetClass)
 {
@@ -20,6 +20,12 @@ void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobb
 			InputMode.SetWidgetToFocus(LobbyWidget->TakeWidget());
 			SetInputMode(InputMode);
 		}
+		else
+		{
+			FInputModeGameOnly InputMode;
+			SetInputMode(InputMode);
+			bShowMouseCursor = false;
+		}
 	}
 }
 
@@ -27,14 +33,15 @@ void ASnakePlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	UE_LOG(LogTemp, Warning, TEXT("OnPossess: %s"), *GetNameSafe(InPawn));
+	UE_LOG(LogTemp, Warning, TEXT("Controller %s possessed %s"),
+		*GetName(),
+		*InPawn->GetName());
 
-	SetViewTargetWithBlend(InPawn);
-
-	// Restore game input here (important after lobby)
-	FInputModeGameOnly InputMode;
-	SetInputMode(InputMode);
-	bShowMouseCursor = false;
+	if (IsLocalController() && InPawn)
+	{
+		SetViewTargetWithBlend(InPawn);
+	}
+	
 }
 
 void ASnakePlayerController::OnRep_Pawn()
@@ -43,7 +50,7 @@ void ASnakePlayerController::OnRep_Pawn()
 
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_Pawn: %s"), *GetNameSafe(GetPawn()));
 
-	if (GetPawn())
+	if (IsLocalController() && GetPawn())
 	{
 		SetViewTargetWithBlend(GetPawn());
 	}
