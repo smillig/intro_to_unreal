@@ -6,6 +6,8 @@
 #include "EngineUtils.h"
 #include "SnakePlayerState.h"
 #include "SnakePlayerController.h"
+#include "AGridGenerator.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 
 ABattleSnakeGameMode::ABattleSnakeGameMode()
@@ -26,39 +28,6 @@ void ABattleSnakeGameMode::BeginPlay()
 		*GetNameSafe(DefaultPawnClass));
 }
 
-// FString ABattleSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
-// {
-// 	// Does not appear to fire InitNewPlayer in seamless trave mode
-// 	// This does fire in Hard travel mode when seamless is disabled
-// 	// Does not appear to fire on the host
-// 	FString ErrorMessage = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
-// 	FString InName = UGameplayStatics::ParseOption(Options, TEXT("PlayerName"));
-//
-// 	if (NewPlayerController)
-// 	{
-// 		if (InName.IsEmpty() && NewPlayerController->IsLocalController())
-// 		{
-// 			if (USnakeGameInstance* GI = GetGameInstance<USnakeGameInstance>())
-// 			{
-// 				InName = GI->UserPlayerName;
-// 			}
-// 		}
-//
-// 		// Fallback
-// 		if (InName.IsEmpty()) InName = TEXT("UnknownSnakePlayer");
-//
-// 		PendingNames.Add(NewPlayerController, InName);
-// 		// 
-// 		UE_LOG(LogTemp, Warning, TEXT("Player Name %s. In BattleSnakeGameMode InitNewPlayer"), *InName);
-// 		UE_LOG(LogTemp, Log, TEXT("Pending Names Contains: "));
-// 		for (TTuple<APlayerController*, FString> ThisName : PendingNames)
-// 		{
-// 			UE_LOG(LogTemp, Log, TEXT("%s : %s"), *ThisName.Key->PlayerState.GetName(), *ThisName.Value);
-// 		}
-// 	}
-// 	return ErrorMessage;
-// }
-
 void ABattleSnakeGameMode::HandleSeamlessTravelPlayer(AController*& Contr)
 {
 	Super::HandleSeamlessTravelPlayer(Contr);
@@ -73,73 +42,151 @@ void ABattleSnakeGameMode::HandleSeamlessTravelPlayer(AController*& Contr)
 	
 	UE_LOG(LogTemp, Warning, TEXT("Name From GI: %s in seamless travel."), *SnGI->UserPlayerName);
 	
-	// RestartPlayer(Contr);
+}
+
+FIntPoint ABattleSnakeGameMode::GetNextSpawnCell()
+{
+	// 1. Get current slot and advance the Round Robin for the NEXT person
+	int32 CurrentSlot = SpawnSlot;
+	SpawnSlot = (SpawnSlot + 1) % 4; 
+
+	AAGridGenerator* LocalGridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
 	
+	if (LocalGridGen)
+	{
+		switch (CurrentSlot)
+		{
+		case 0: return FIntPoint(5, 5);                                              // Bottom Left
+		case 1: return FIntPoint(LocalGridGen->Width - 6, LocalGridGen->Height - 6); // Top Right
+		case 2: return FIntPoint(5, LocalGridGen->Height - 6);                       // Top Left
+		case 3: return FIntPoint(LocalGridGen->Width - 6, 5);                        // Bottom Right
+		}
+	}
+	
+	return FIntPoint(5, 5); // Fallback
 }
 
 AActor* ABattleSnakeGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	ASnakePlayerState* PS = Player->GetPlayerState<ASnakePlayerState>();
-	if (!PS)
-	{
-		return Super::ChoosePlayerStart_Implementation(Player);
-	}
-	
-	// if (PS->PlayerSlotID == -1)
-	// {
-	// 	PS->PlayerSlotID = NextSlotID++;
-	// }
+	// Capture the slot number BEFORE we increment it (GetNextSpawnCell increments it automatically)
+	int32 SlotForTag = SpawnSlot; 
+	FName TargetTag = FName(*FString::Printf(TEXT("Start%d"), SlotForTag));
 
-	FName TargetTag = FName(*FString::Printf(TEXT("Start%d"), PS->PlayerSlotID));
-
+	// Check if we ALREADY spawned an invisible PlayerStart for this slot
 	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 	{
 		if (It->PlayerStartTag == TargetTag)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Spawn: %s -> %s"),
-				*Player->GetName(),
-				*TargetTag.ToString());
-
+			// We only need to advance the counter so the next player gets a different spot
+			GetNextSpawnCell(); 
 			return *It;
 		}
 	}
 
+	// It doesn't exist yet! Let's get the calculated spot and spawn one dynamically.
+	FIntPoint SpawnGridPos = GetNextSpawnCell();
+	AAGridGenerator* LocalGridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
+
+	if (LocalGridGen)
+	{
+		int32 ZIndex = LocalGridGen->GetIndex(SpawnGridPos.X, SpawnGridPos.Y, 1);
+		float Zposition = (LocalGridGen->GridData.IsValidIndex(ZIndex)) ? LocalGridGen->GridData[ZIndex].ZOffset : 0.0f;
+		FVector WorldSpawnLocation = FVector(SpawnGridPos.X * LocalGridGen->TileSize, SpawnGridPos.Y * LocalGridGen->TileSize, Zposition + 100.0f);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		
+		if (APlayerStart* DynamicStart = GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), WorldSpawnLocation, FRotator::ZeroRotator, SpawnParams))
+		{
+			DynamicStart->PlayerStartTag = TargetTag;
+			return DynamicStart;
+		}
+	}
+
 	return Super::ChoosePlayerStart_Implementation(Player);
+}
+
+void ABattleSnakeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
 	
+	
+	ASnakePlayerState* PS = NewPlayer->GetPlayerState<ASnakePlayerState>();
+	
+	if (PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player arrived: %s in Handle Starting New Player."), *PS->SnakeName );
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player State not available yet in Handle Starting New Player.") );
+	}
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 }
 
 void ABattleSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 {
+	if (NewPlayerController)
+	{
+		ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
+		if (PS)
+		{
+			// Apply Name
+			if (FString* FoundName = PendingNames.Find(NewPlayerController))
+			{
+				PS->SnakeName = *FoundName;
+				PS->OnRep_SnakeName(); // Update Host immediately
+				PendingNames.Remove(NewPlayerController);
+			}
+
+			// Apply Slot ID
+			if (int32* FoundSlot = PendingSlots.Find(NewPlayerController))
+			{
+				PS->PlayerSlotID = *FoundSlot;
+				PendingSlots.Remove(NewPlayerController);
+			}
+		}
+	}
 	Super::PostLogin(NewPlayerController);
-
-	if (!NewPlayerController) return;
-
-	ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
-	if (!PS) return;
-
-	// Assign slot FIRST
-	if (PS->PlayerSlotID == -1)
-	{
-		PS->PlayerSlotID = NextSlotID++;
-
-		UE_LOG(LogTemp, Warning, TEXT("Assigned Slot %d to %s"),
-			PS->PlayerSlotID,
-			*NewPlayerController->GetName());
-	}
-
-	// Assign name
-	if (FString* FoundName = PendingNames.Find(NewPlayerController))
-	{
-		PS->SnakeName = *FoundName;
-		PS->OnRep_SnakeName();
-
-		PS->SpawnIndex = NextStartIndex++;
-
-		PendingNames.Remove(NewPlayerController);
-	}
-
 	// FORCE deterministic spawn (ONLY HERE)
 	RestartPlayer(NewPlayerController);
+}
+
+FString ABattleSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
+{
+	FString ErrorMessage = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+
+	UE_LOG(LogTemp, Warning, TEXT("New Player Init: %s in Init New Player"), *NewPlayerController->GetName());
+	
+	ASnakePlayerState* PS = NewPlayerController->GetPlayerState<ASnakePlayerState>();
+	
+	if (PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player State: %s in Init New Player"), *PS->SnakeName);
+	}
+	
+	if (NewPlayerController)
+	{
+		// 1. Grab the name from the URL
+		FString InName = UGameplayStatics::ParseOption(Options, TEXT("PlayerName"));
+		
+		// Fallback if URL is empty (Usually true for the Host)
+		if (InName.IsEmpty() && NewPlayerController->IsLocalController())
+		{
+			if (USnakeGameInstance* GI = GetGameInstance<USnakeGameInstance>())
+			{
+				InName = GI->UserPlayerName;
+			}
+		}
+		if (InName.IsEmpty()) InName = TEXT("UnknownSnakePlayer");
+
+		// 2. Store the Name for PostLogin
+		PendingNames.Add(NewPlayerController, InName);
+
+		// 3. Assign their Slot ID right now (0, 1, 2...)
+		PendingSlots.Add(NewPlayerController, NextSlotID++);
+	}
+
+	return ErrorMessage;
 }
 
 // void ABattleSnakeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)

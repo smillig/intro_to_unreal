@@ -3,6 +3,7 @@
 
 #include "SnakePawn.h"
 #include "AGridGenerator.h"
+#include "BattleSnakeGameMode.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
@@ -511,12 +512,24 @@ void ASnakePawn::HandleSnakeDeath()
 
 void ASnakePawn::ResetSnake()
 {
-	const FIntPoint SpawnCell = GetClampedStartGridPosition();
+	FIntPoint SpawnCell;
+
+	// Ask the Server GameMode for the next round-robin spot!
+	if (ABattleSnakeGameMode* GM = Cast<ABattleSnakeGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		SpawnCell = GM->GetNextSpawnCell();
+	}
+	else
+	{
+		// If we are in Solo Mode, the cast fails, so we safely fallback to the old logic
+		SpawnCell = GetClampedStartGridPosition();
+	}
+	
 	CurrentGridLocation = SpawnCell;
 	PendingNextGridLocation = SpawnCell;
 
-	CurrentDirection = ESnakeDirection::Right;
-	RequestedDirection = ESnakeDirection::Right;
+	CurrentDirection = ESnakeDirection::Up;
+	RequestedDirection = ESnakeDirection::Up;
 	UpdateDirection(CurrentDirection);
 	
 	const FVector ResetLocation = GridToWorldLocation(CurrentGridLocation);

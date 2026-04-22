@@ -22,6 +22,19 @@ void ASnakePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASnakePlayerState, SnakeName);
-	DOREPLIFETIME(ASnakePlayerState, SpawnIndex);
 	DOREPLIFETIME(ASnakePlayerState, PlayerSlotID);
+}
+
+// potential fix for Player State being lost between transitions:
+void ASnakePlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+
+	// This is the magic function for Seamless Travel. 
+	// It copies your custom variables from the old map to the new map!
+	if (ASnakePlayerState* NewState = Cast<ASnakePlayerState>(PlayerState))
+	{
+		NewState->SnakeName = this->SnakeName;
+		NewState->PlayerSlotID = this->PlayerSlotID;
+	}
 }

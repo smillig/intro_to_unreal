@@ -18,9 +18,6 @@ public:
 	FString SnakeName;
 	
 	UPROPERTY(Replicated)
-	int32 SpawnIndex = -1;
-	
-	UPROPERTY(Replicated)
 	int32 PlayerSlotID = -1;
 
 	UFUNCTION()
@@ -32,4 +29,7 @@ public:
 
 	// MANDATORY for replication to work
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+protected:
+	virtual void CopyProperties(APlayerState* PlayerState) override;
 };

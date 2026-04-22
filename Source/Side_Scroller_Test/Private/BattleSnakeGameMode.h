@@ -19,30 +19,27 @@ protected:
 	
 	virtual void BeginPlay() override;
 	
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+
 public:
 	ABattleSnakeGameMode();
+	
+	FIntPoint GetNextSpawnCell();
 	
 	// We override this to spawn a snake for every player that travels in
 	virtual void PostLogin(APlayerController* NewPlayerController) override;
 	
-	// virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 	virtual void HandleSeamlessTravelPlayer(AController*& Contr) override;
-	
-private:
-	FTimerHandle SpawnTimerHandle;
 
-	int32 NextStartIndex = 0;
-	
-	int32 PlayersSpawnedCount = 0;
+private:
+	UPROPERTY()
+	TMap<APlayerController*, int32> PendingSlots;
 	
 	int32 NextSlotID = 0;
 	
-	UPROPERTY()
-	TArray<AController*> ReadyPlayers;
-	
-	UPROPERTY(EditDefaultsOnly, Category="Match")
-	int32 ExpectedPlayerCount = 2;
+	int32 SpawnSlot = 0;
 };
