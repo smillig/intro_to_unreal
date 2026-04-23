@@ -266,14 +266,34 @@ void ASnakePawn::CheckLayerTransition(int32 TargetX, int32 TargetY)
 	}
 }
 
-void ASnakePawn::AddSegment()
+void ASnakePawn::ModifySegments(int32 Amount)
 {
-    
-	// Logic: Add a location at the very end
-	FVector LastLoc = SegmentLocations.Num() > 0 ? SegmentLocations.Last() : GetActorLocation();
-	SegmentLocations.Add(LastLoc);
-    
-	SegmentCount++;
+	if (Amount > 0)
+	{
+		for (int i = 0; i < Amount; i++)
+		{
+			FVector LastLoc = SegmentLocations.Num() > 0 ? SegmentLocations.Last() : GetActorLocation();
+			SegmentLocations.Add(LastLoc);
+			SegmentCount++;
+		}
+	}
+	else if (Amount < 0)
+	{
+		int32 ShrinkAmount = FMath::Abs(Amount);
+		for (int i = 0; i < ShrinkAmount; i++)
+		{
+			if (SegmentCount > 0)
+			{
+				SegmentLocations.Pop();
+				SegmentCount--;
+			}
+			else
+			{
+				HandleSnakeDeath(); // Shrunk to nothing!
+				break;
+			}
+		}
+	}
 }
 
 void ASnakePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

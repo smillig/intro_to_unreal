@@ -2,16 +2,17 @@
 
 
 #include "SnakePlayerState.h"
-
-#include <ThirdParty/ShaderConductor/ShaderConductor/External/DirectXShaderCompiler/include/dxc/DXIL/DxilConstants.h>
-
-#include "DSP/BufferDiagnostics.h"
-#include "Net/UnrealNetwork.h" // <--- CRITICAL INCLUDE for replication
+#include "Net/UnrealNetwork.h"
 
 void ASnakePlayerState::OnRep_SnakeName()
 {
 	// This runs on Clients when SnakeName is updated from the server
 	UE_LOG(LogTemp, Log, TEXT("SnakeName replicated to client: %s"), *SnakeName);
+}
+
+void ASnakePlayerState::OnRep_SnakeScore()
+{
+	OnScoreChanged.Broadcast(SnakeScore);
 }
 
 void ASnakePlayerState::Server_SetSnakeName_Implementation(const FString& NewName)

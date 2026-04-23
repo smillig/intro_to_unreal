@@ -27,12 +27,32 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Game Rules")
 	TSubclassOf<AFoodActor> MushroomClass;
 	
+	UFUNCTION()
+	void HandleFoodEaten(AFoodActor* EatenFood, ASnakePawn* SnakePawn);
+	
+	UFUNCTION()
+	void OnMatchTimerTick();
+	
+	void EndGame();
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Game Rules")
+	int32 MaxFoodOnBoard = 5;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Game Rules")
+	int32 MatchDurationSeconds = 180;
+	
+	FTimerHandle FoodSpawnTimerHandle;
+	FTimerHandle MatchTimerHandle;
+	
 	UPROPERTY()
 	AAGridGenerator* GridGen;
 
 	int32 SpawnSlot = 0;
 	
 public:
+	UFUNCTION(BlueprintCallable)
+	void MaintainFoodCount();
+	
 	UFUNCTION(BlueprintCallable)
 	void SpawnFood();
 	

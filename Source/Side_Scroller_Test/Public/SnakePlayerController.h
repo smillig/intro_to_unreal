@@ -21,6 +21,9 @@ public:
 	
 	virtual void OnRep_Pawn() override;
 	
+	UFUNCTION(Client, Reliable)
+	void Client_ShowGameOverScreen();
+	
 protected:	
 	virtual void OnPossess(APawn* Pawn) override;
 };

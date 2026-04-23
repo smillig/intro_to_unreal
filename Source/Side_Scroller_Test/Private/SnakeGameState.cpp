@@ -9,4 +9,10 @@ void ASnakeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ASnakeGameState, ServerDisplayIP);
+	DOREPLIFETIME(ASnakeGameState, MatchTimeRemaining);
+}
+
+void ASnakeGameState::OnRep_MatchTimeRemaining()
+{
+	OnTimerUpdated.Broadcast(MatchTimeRemaining);
 }

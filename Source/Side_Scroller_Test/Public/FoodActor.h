@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "FoodActor.generated.h"
 
+// Declare the Delegate Signature
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnFoodEatenSignature, class AFoodActor*, EatenFood, class ASnakePawn*, Eater);
+
 class USphereComponent;
 class UStaticMeshComponent;
 
@@ -26,10 +29,16 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Food Properties")
 	int32 ScoreValue = 1;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Food Properties")
+	int32 GrowthAmount = 1;
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnFoodEatenSignature OnFoodEaten;
 
 protected:
 	// Called when the game starts or when spawned
-	// virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* CollisionSphereComponent;
@@ -42,4 +51,6 @@ protected:
 					UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 					bool bFromSweep, const FHitResult& SweepResult);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Food Properties")
+	float LifeTime = 15.0f;
 };

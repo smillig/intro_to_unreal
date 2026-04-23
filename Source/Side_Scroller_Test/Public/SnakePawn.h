@@ -162,7 +162,8 @@ public:
 	
 	// For hooking in blueprints when eating food
 	UFUNCTION(BlueprintCallable)
-	void AddSegment();
+	void ModifySegments(int32 Amount);
+	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void PawnClientRestart() override;
 	

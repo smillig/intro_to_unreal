@@ -56,6 +56,11 @@ void ASnakePlayerController::OnRep_Pawn()
 	}
 }
 
+void ASnakePlayerController::Client_ShowGameOverScreen_Implementation()
+{
+	
+}
+
 void ASnakePlayerController::Server_LeaveLobby_Implementation()
 {
 	if (!IsLocalController())
@@ -64,5 +69,4 @@ void ASnakePlayerController::Server_LeaveLobby_Implementation()
 		// ClientTravel(TEXT("/Game/Maps/MainMenu"), ETravelType::TRAVEL_Absolute);
 		Destroy();
 	}
-	
 }

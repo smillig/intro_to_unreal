@@ -4,6 +4,8 @@
 #include "SnakeGameMode.h"
 #include "AGridGenerator.h"
 #include "SnakePawn.h"
+#include "SnakeGameState.h"
+#include "SnakePlayerController.h"
 #include "SnakePlayerState.h"
 #include "FoodActor.h"
 #include "Kismet/GameplayStatics.h"
@@ -16,7 +18,30 @@ void ASnakeGameMode::BeginPlay()
 	// Find managers
 	GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
 	
-	SpawnFood();
+	// start spawner timer loop at every two seconds
+	GetWorldTimerManager().SetTimer(FoodSpawnTimerHandle, this, &ASnakeGameMode::MaintainFoodCount, 2.0f, true);
+	
+	// start the game timer (1 second tick rate)
+	GetWorldTimerManager().SetTimer(MatchTimerHandle, this, &ASnakeGameMode::OnMatchTimerTick, 1.0f, true);
+	
+	if (ASnakeGameState* GS = GetGameState<ASnakeGameState>())
+	{
+		GS->MatchTimeRemaining = MatchDurationSeconds;
+	}
+}
+
+void ASnakeGameMode::MaintainFoodCount()
+{
+	// get number of food on the board
+	int32 CurrentFood = 0;
+	for (TActorIterator<AFoodActor> It(GetWorld()); It; ++It) CurrentFood++;
+	
+	// spawn food till it's enough
+	while (CurrentFood < MaxFoodOnBoard)
+	{
+		SpawnFood();
+		CurrentFood++;
+	}
 }
 
 void ASnakeGameMode::SpawnFood()
@@ -65,7 +90,9 @@ void ASnakeGameMode::SpawnFood()
 		float FloorZ = GridGen->GridData[Idx].ZOffset;
 		FVector SpawnLocation = FVector(RandomCell.X * GridGen->TileSize, RandomCell.Y * GridGen->TileSize, FloorZ + 80.0f);
 		UE_LOG(LogTemp, Log, TEXT("Spawning food at %d"), RandomCell.X);
-		GetWorld()->SpawnActor<AFoodActor>(FoodToSpawn, SpawnLocation, FRotator::ZeroRotator);
+		// GetWorld()->SpawnActor<AFoodActor>(FoodToSpawn, SpawnLocation, FRotator::ZeroRotator);
+		AFoodActor* NewFood = GetWorld()->SpawnActor<AFoodActor>(FoodToSpawn, SpawnLocation, FRotator::ZeroRotator);
+		NewFood->OnFoodEaten.AddDynamic(this, &ASnakeGameMode::HandleFoodEaten);
 	}
 }
 
@@ -148,22 +175,51 @@ bool ASnakeGameMode::IsCellSafe(ASnakePawn* MovingSnake, FIntPoint TargetCell)
 			}
 		}
 	}
-	
 	// Cell is totally empty of snakes!
 	return true;
 }
 
-// example code for future multiplayer collision handler
-// void ASnakeGameMode::OnSnakeHitCollision(ASnakePawn* Victim, ASnakePawn* Attacker)
-// {
-// 	// Award points to the Attacker (if it wasn't a self-collision)
-// 	if (Attacker && Attacker != Victim) {
-// 		Attacker->AddScore(100);
-// 	}
-//
-// 	// Kill the Victim
-// 	Victim->SetIsDead(true);
-//
-// 	// Logic for respawning or Game Over
-// 	RestartPlayer(Victim->GetController());
-// }
+void ASnakeGameMode::HandleFoodEaten(AFoodActor* EatenFood, ASnakePawn* Eater)
+{
+	if (!Eater || !EatenFood) return;
+
+	// Give points
+	if (ASnakePlayerState* PS = Eater->GetPlayerState<ASnakePlayerState>())
+	{
+		PS->AddScore(EatenFood->ScoreValue);
+	}
+
+	// Grow/Shrink Snake
+	Eater->ModifySegments(EatenFood->GrowthAmount);
+}
+
+void ASnakeGameMode::OnMatchTimerTick()
+{
+	if (ASnakeGameState* GS = GetGameState<ASnakeGameState>())
+	{
+		GS->MatchTimeRemaining--;
+		
+		// Optional: Force a replication update instantly for accurate UI
+		GS->ForceNetUpdate(); 
+
+		if (GS->MatchTimeRemaining <= 0)
+		{
+			EndGame();
+		}
+	}
+}
+
+void ASnakeGameMode::EndGame()
+{
+	GetWorldTimerManager().ClearTimer(MatchTimerHandle);
+	GetWorldTimerManager().ClearTimer(FoodSpawnTimerHandle);
+
+	// Tell all controllers the game is over to show the UI
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ASnakePlayerController* PC = Cast<ASnakePlayerController>(It->Get()))
+		{
+			PC->Client_ShowGameOverScreen();
+		}
+	}
+}

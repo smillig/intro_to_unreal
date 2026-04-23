@@ -2,8 +2,6 @@
 
 
 #include "FoodActor.h"
-
-#include "SnakeGameMode.h"
 #include "SnakePawn.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
@@ -28,20 +26,28 @@ AFoodActor::AFoodActor()
 	
 	CollisionSphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AFoodActor::OnOverlap);
 }
+void AFoodActor::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	// Mushrooms stays on board for only a set time
+	if (HasAuthority() && FoodType == EFoodType::Mushroom)
+	{
+		SetLifeSpan(LifeTime);
+	}
+}
 
 void AFoodActor::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (ASnakePawn* SnakePawn = Cast<ASnakePawn>(OtherActor))
 	{
+		// Moving this to Message
 		// send message to game mode to then handle snake adding segment
-		SnakePawn->AddSegment(); // could pass snake ScoreValue to grow or shrink
-		UE_LOG(LogTemp, Log, TEXT("Ate a food worth %d points"), ScoreValue);
-		// spawn new food
+		// SnakePawn->AddSegment(); // could pass snake ScoreValue to grow or shrink
+		// UE_LOG(LogTemp, Log, TEXT("Ate a food worth %d points"), ScoreValue);
 		
-		if (ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			GM->SpawnFood();
-		}
+		// broadcast the food was eaten by whom
+		OnFoodEaten.Broadcast(this, SnakePawn);
 		// destroy food once eaten (Collided)
 		Destroy();
 	}

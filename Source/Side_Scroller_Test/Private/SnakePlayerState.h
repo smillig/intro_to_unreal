@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "SnakePlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScoreChanged, int32, NewScore);
 
 UCLASS()
 class SIDE_SCROLLER_TEST_API ASnakePlayerState : public APlayerState
@@ -22,6 +23,9 @@ public:
 
 	UFUNCTION()
 	void OnRep_SnakeName();
+	
+	UFUNCTION()
+	void OnRep_SnakeScore();
 
 	// The RPC to set the name on the server
 	UFUNCTION(Server, Reliable)
@@ -31,6 +35,9 @@ public:
 	int32 SnakeScore = 0;
 	
 	void AddScore(int32 Amount);
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnScoreChanged OnScoreChanged;
 
 	// MANDATORY for replication to work
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
