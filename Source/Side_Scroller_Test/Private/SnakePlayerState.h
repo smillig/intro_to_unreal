@@ -26,6 +26,11 @@ public:
 	// The RPC to set the name on the server
 	UFUNCTION(Server, Reliable)
 	void Server_SetSnakeName(const FString& NewName);
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake")
+	int32 SnakeScore = 0;
+	
+	void AddScore(int32 Amount);
 
 	// MANDATORY for replication to work
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

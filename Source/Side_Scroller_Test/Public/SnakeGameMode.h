@@ -29,9 +29,15 @@ protected:
 	
 	UPROPERTY()
 	AAGridGenerator* GridGen;
+
+	int32 SpawnSlot = 0;
 	
 public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnFood();
+	
+	FIntPoint GetNextSpawnCell();
+	
+	bool IsCellSafe(class ASnakePawn* MovingSnake, FIntPoint TargetCell);
 	
 };

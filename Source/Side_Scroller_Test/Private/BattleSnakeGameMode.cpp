@@ -44,28 +44,6 @@ void ABattleSnakeGameMode::HandleSeamlessTravelPlayer(AController*& Contr)
 	
 }
 
-FIntPoint ABattleSnakeGameMode::GetNextSpawnCell()
-{
-	// 1. Get current slot and advance the Round Robin for the NEXT person
-	int32 CurrentSlot = SpawnSlot;
-	SpawnSlot = (SpawnSlot + 1) % 4; 
-
-	AAGridGenerator* LocalGridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
-	
-	if (LocalGridGen)
-	{
-		switch (CurrentSlot)
-		{
-		case 0: return FIntPoint(5, 5);                                              // Bottom Left
-		case 1: return FIntPoint(LocalGridGen->Width - 6, LocalGridGen->Height - 6); // Top Right
-		case 2: return FIntPoint(5, LocalGridGen->Height - 6);                       // Top Left
-		case 3: return FIntPoint(LocalGridGen->Width - 6, 5);                        // Bottom Right
-		}
-	}
-	
-	return FIntPoint(5, 5); // Fallback
-}
-
 AActor* ABattleSnakeGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
 	// Capture the slot number BEFORE we increment it (GetNextSpawnCell increments it automatically)
@@ -188,46 +166,3 @@ FString ABattleSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerControll
 
 	return ErrorMessage;
 }
-
-// void ABattleSnakeGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
-// {
-// 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
-//
-// 	// DO NOT call RestartPlayer anywhere else
-// 	RestartPlayer(NewPlayer);
-// 	// RestartPlayerAtPlayerStart(NewPlayer);
-// }
-
-// void ABattleSnakeGameMode::SpawnSnakeForPlayer(APlayerController* PC)
-// {
-// 	if (!PC) return;
-// 	
-// 	// spawn position
-// 	GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
-// 	if (!GridGen) return;
-// 	
-// 	// Use the counter, then increment it
-// 	int32 PlayerIdx = PlayersSpawnedCount;
-// 	PlayersSpawnedCount++;
-// 	
-// 	// Calculate quadrant coords
-// 	// 5 tile buffer for player spawn point
-// 	FIntPoint SpawnGridPos;
-// 	switch (PlayerIdx)
-// 	{
-// 	case 0: SpawnGridPos = FIntPoint(5, 5); break;										// bottom left
-// 	case 1: SpawnGridPos = FIntPoint(GridGen->Width - 6, GridGen->Height - 6); break;	// top right
-// 	case 2: SpawnGridPos = FIntPoint(5, GridGen->Height - 6); break;					// top left
-// 	case 3: SpawnGridPos = FIntPoint(GridGen->Width - 6, 5); break;						// bottom right
-// 	default: SpawnGridPos = FIntPoint(GridGen->Width / 2, GridGen->Height / 2); break;	// default to center 
-// 	}
-// 	
-// 	// convert grid to world position
-// 	// spawn on layer 1
-// 	int32 ZIndex = GridGen->GetIndex(SpawnGridPos.X, SpawnGridPos.Y, 1);
-// 	float Zposition = (GridGen->GridData.IsValidIndex(ZIndex)) ? GridGen->GridData[ZIndex].ZOffset : 0.0f;
-// 	
-// 	FVector WorldSpawnLocation = FVector(SpawnGridPos.X * GridGen->TileSize,
-// 										SpawnGridPos.Y * GridGen->TileSize, Zposition + 100.0f);
-// }
-

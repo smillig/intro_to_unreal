@@ -148,7 +148,7 @@ protected:
 
 	bool WouldHitWall(const FIntPoint& NextCell) const;
 	void ResetSnake();
-	void HandleSnakeDeath();
+	
 	FIntPoint GetClampedStartGridPosition() const;
 	void GridMove(const float DeltaTime);
 	void UpdateSplineVisuals();
@@ -165,6 +165,9 @@ public:
 	void AddSegment();
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void PawnClientRestart() override;
+	
+	bool IsDead() const { return bIsDead; }
+	void HandleSnakeDeath();
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetRequestedDirection(ESnakeDirection NewDirection);

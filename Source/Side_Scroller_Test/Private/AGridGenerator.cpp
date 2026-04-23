@@ -275,7 +275,7 @@ void AAGridGenerator::WrapWalls()
 					{
 						// polish - Set transparency on these
 						CurrentTransform.SetScale3D(FVector(1.0f, 1.0f, 0.5f));
-						CurrentTransform.SetLocation(FVector(-1 * TileSize, y * TileSize, ((z * (TileSize )) - (TileSize / 4))));
+						CurrentTransform.SetLocation(FVector(-1 * TileSize, y * TileSize, ((z * TileSize) - (TileSize / 4))));
 					}
 					WallISMC->AddInstance(CurrentTransform);
 				}

@@ -3,7 +3,7 @@
 
 #include "SnakePawn.h"
 #include "AGridGenerator.h"
-#include "BattleSnakeGameMode.h"
+#include "SnakeGameMode.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "SnakePlayerState.h"
 
 // Sets default values
 ASnakePawn::ASnakePawn()
@@ -36,7 +37,7 @@ ASnakePawn::ASnakePawn()
 
 	HeadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
 	HeadMeshComponent->SetupAttachment(RootComponent);
-	HeadMeshComponent->SetHiddenInGame(true);
+	// HeadMeshComponent->SetHiddenInGame(true);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -89,8 +90,8 @@ void ASnakePawn::BeginPlay()
 	UpdateDirection(CurrentDirection);
 	if (HeadMeshComponent) 
 	{
-		HeadMeshComponent->SetHiddenInGame(true);
-		HeadMeshComponent->SetWorldRotation(HeadTargetRotation);
+		// HeadMeshComponent->SetHiddenInGame(true);
+		// HeadMeshComponent->SetRelativeRotation(FRotator(0.0f, -180.0f, 0.0f));
 	}
 }
 
@@ -171,29 +172,10 @@ void ASnakePawn::Tick(float DeltaTime)
 void ASnakePawn::GridMove(float DeltaTime)
 {
 	// Check if in a tunnel or on a bridge or if in move interval time
-	if (!HasAuthority() || bIsMovementLocked || (MoveInterval <= 0.f)) return;
+	if (!HasAuthority() || bIsMovementLocked || (MoveInterval <= 0.0f)) return;
 
 	if (!bIsMovingToTarget)
 	{
-		// future multiplayer server side auth code
-		// server side logic
-		// calculate next desired position
-		// const FIntPoint NextGridLocation = CurrentGridLocation + DirectionToGridOffset(CurrentDirection);
-		// int32 NextLayer = CalculateNextLayer(NextGridLocation); // helper to check for ramps
-		//
-		// // ask GridGen (Server authority) if that cell is safe
-		// if (GridGen->IsLocationBlocked(NextGridLocation, NextLayer, this))
-		// {
-		// 	// your fate is death sayeth the server
-		// 	HandleSnakeDeath();
-		// 	return;
-		// }
-		//
-		// // if safe, the server updates the occupancy map for everyone else
-		// GridGen->UpdateOccupancy(this, ...);
-		//
-		// Server_TargetLocation = GridToWorldLocation(NextGridLocation);
-		
 		// If at target, check for direction change and update target location
 		HandleDirectionChange();
 
@@ -202,17 +184,33 @@ void ASnakePawn::GridMove(float DeltaTime)
 
 		CheckLayerTransition(PendingNextGridLocation.X, PendingNextGridLocation.Y);
 		
+		// check for wall or level collisions
 		if (WouldHitWall(PendingNextGridLocation))
 		{
+			if (ASnakePlayerState* PS = GetPlayerState<ASnakePlayerState>())
+			{
+				PS->AddScore(-50); // should move these to penalty variables
+			}
 			HandleSnakeDeath();
 			return;
+		}
+		
+		// handle collisions with snakes
+		if (ASnakeGameMode* GameMode = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			// ISCellSafe handles points and calls HandleSnakeDeath
+			if (!GameMode->IsCellSafe(this, PendingNextGridLocation))
+			{
+				// no more movement
+				return;
+			}
 		}
 
 		StepStartWorldLocation = GetActorLocation();
 		StepTargetWorldLocation = GridToWorldLocation(PendingNextGridLocation);
 		// Since we're just starting to move towards the new target, we reset the interpolation progress to 0
 		MoveInterpolationProgress = 0.f; 
-		HeadStartRotation = HeadMeshComponent->GetComponentRotation();
+		HeadStartRotation = HeadMeshComponent->GetRelativeRotation();
 		bIsMovingToTarget = true;
 	}
 
@@ -230,7 +228,7 @@ void ASnakePawn::GridMove(float DeltaTime)
 
 	if (Alpha >= 1.f)
 	{
-		HeadMeshComponent->SetWorldRotation(HeadTargetRotation);
+		HeadMeshComponent->SetRelativeRotation(HeadTargetRotation);
 		// Update Segment logic positions
 		for (int32 i = SegmentLocations.Num() - 1; i > 0; i--) {
 			SegmentLocations[i] = SegmentLocations[i - 1];
@@ -432,13 +430,13 @@ void ASnakePawn::UpdateDirection(ESnakeDirection NewDirection)
 {
 	switch (NewDirection)
 	{
-		case ESnakeDirection::Up:	HeadTargetRotation = FRotator(0.f, -90.f, 0.f);
+		case ESnakeDirection::Up:	HeadTargetRotation = FRotator(0.f, 180.f , 0.f);
 			break;
-		case ESnakeDirection::Down:	HeadTargetRotation = FRotator(0.f, 90.f, 0.f);
+		case ESnakeDirection::Down:	HeadTargetRotation = FRotator(0.f, 0.f, 0.f);
 			break;
-		case ESnakeDirection::Left:	HeadTargetRotation = FRotator(0.f, 180.f, 0.f);
+		case ESnakeDirection::Left:	HeadTargetRotation = FRotator(0.f, 90.f, 0.f);
 			break;
-		case ESnakeDirection::Right:HeadTargetRotation = FRotator(0.f, 0.f, 0.f);
+		case ESnakeDirection::Right:HeadTargetRotation = FRotator(0.f, -90.f, 0.f);
 			break;
 	}
 }
@@ -515,13 +513,13 @@ void ASnakePawn::ResetSnake()
 	FIntPoint SpawnCell;
 
 	// Ask the Server GameMode for the next round-robin spot!
-	if (ABattleSnakeGameMode* GM = Cast<ABattleSnakeGameMode>(GetWorld()->GetAuthGameMode()))
+	if (ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
 	{
 		SpawnCell = GM->GetNextSpawnCell();
 	}
 	else
 	{
-		// If we are in Solo Mode, the cast fails, so we safely fallback to the old logic
+		// fallback to the old logic
 		SpawnCell = GetClampedStartGridPosition();
 	}
 	

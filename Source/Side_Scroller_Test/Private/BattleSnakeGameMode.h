@@ -24,8 +24,6 @@ protected:
 public:
 	ABattleSnakeGameMode();
 	
-	FIntPoint GetNextSpawnCell();
-	
 	// We override this to spawn a snake for every player that travels in
 	virtual void PostLogin(APlayerController* NewPlayerController) override;
 	
@@ -41,5 +39,4 @@ private:
 	
 	int32 NextSlotID = 0;
 	
-	int32 SpawnSlot = 0;
 };

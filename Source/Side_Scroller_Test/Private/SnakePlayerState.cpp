@@ -2,6 +2,10 @@
 
 
 #include "SnakePlayerState.h"
+
+#include <ThirdParty/ShaderConductor/ShaderConductor/External/DirectXShaderCompiler/include/dxc/DXIL/DxilConstants.h>
+
+#include "DSP/BufferDiagnostics.h"
 #include "Net/UnrealNetwork.h" // <--- CRITICAL INCLUDE for replication
 
 void ASnakePlayerState::OnRep_SnakeName()
@@ -23,6 +27,7 @@ void ASnakePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASnakePlayerState, SnakeName);
 	DOREPLIFETIME(ASnakePlayerState, PlayerSlotID);
+	DOREPLIFETIME(ASnakePlayerState, SnakeScore);
 }
 
 // potential fix for Player State being lost between transitions:
@@ -36,5 +41,14 @@ void ASnakePlayerState::CopyProperties(APlayerState* PlayerState)
 	{
 		NewState->SnakeName = this->SnakeName;
 		NewState->PlayerSlotID = this->PlayerSlotID;
+	}
+}
+
+void ASnakePlayerState::AddScore(int32 Amount)
+{
+	if (HasAuthority())
+	{
+		SnakeScore += Amount;
+		UE_LOG(LogTemp, Log, TEXT("Amount = %d added for Player: %s"), Amount, *SnakeName);
 	}
 }
