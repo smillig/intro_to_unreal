@@ -30,6 +30,43 @@ void ASnakeGameMode::BeginPlay()
 	}
 }
 
+void ASnakeGameMode::HandleSeamlessTravelPlayer(AController*& Contr)
+{
+	Super::HandleSeamlessTravelPlayer(Contr);
+	
+	ASnakePlayerController* PC = Cast<ASnakePlayerController>(Contr);
+	if (PC)
+	{
+		if (UPlayerHUDWidgetClass) // Check if you set it in the editor!
+		{
+			PC->Client_ShowPlayerHud(UPlayerHUDWidgetClass);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("HUD CLASS IS NULL! Please open BP_BattleSnakeGameMode and set UPlayerHUDWidgetClass!"));
+		}
+	}
+}
+	
+void ASnakeGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+	
+	ASnakePlayerController* PC = Cast<ASnakePlayerController>(NewPlayer);
+	if (PC)
+	{
+		if (UPlayerHUDWidgetClass) // Check if you set it in the editor!
+		{
+			PC->Client_ShowPlayerHud(UPlayerHUDWidgetClass);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("HUD CLASS IS NULL! Please open BP_BattleSnakeGameMode and set UPlayerHUDWidgetClass!"));
+		}
+	}
+}
+
+
 void ASnakeGameMode::MaintainFoodCount()
 {
 	// get number of food on the board
@@ -200,7 +237,10 @@ void ASnakeGameMode::OnMatchTimerTick()
 		GS->MatchTimeRemaining--;
 		
 		// Optional: Force a replication update instantly for accurate UI
-		GS->ForceNetUpdate(); 
+		GS->ForceNetUpdate();
+		
+		// since host is a player we need to broadcast to them too
+		GS->OnTimerUpdated.Broadcast(GS->MatchTimeRemaining);
 
 		if (GS->MatchTimeRemaining <= 0)
 		{

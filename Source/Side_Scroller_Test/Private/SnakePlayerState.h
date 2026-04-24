@@ -23,16 +23,16 @@ public:
 
 	UFUNCTION()
 	void OnRep_SnakeName();
-	
-	UFUNCTION()
-	void OnRep_SnakeScore();
 
 	// The RPC to set the name on the server
 	UFUNCTION(Server, Reliable)
 	void Server_SetSnakeName(const FString& NewName);
 	
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake")
+	UPROPERTY(ReplicatedUsing= OnRep_SnakeScore, BlueprintReadOnly, Category = "Snake")
 	int32 SnakeScore = 0;
+	
+	UFUNCTION()
+	void OnRep_SnakeScore();
 	
 	void AddScore(int32 Amount);
 	

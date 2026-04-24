@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "PlayerHUDUserWidget.h"
 #include "SnakeGameMode.generated.h"
 
 class AFoodActor;
@@ -56,8 +57,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnFood();
 	
+	virtual void HandleSeamlessTravelPlayer(AController*& Contr) override;
+	
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	
 	FIntPoint GetNextSpawnCell();
 	
 	bool IsCellSafe(class ASnakePawn* MovingSnake, FIntPoint TargetCell);
+	
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<UPlayerHUDUserWidget> UPlayerHUDWidgetClass;
 	
 };

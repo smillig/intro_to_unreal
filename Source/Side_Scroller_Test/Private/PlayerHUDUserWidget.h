@@ -6,14 +6,31 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUDUserWidget.generated.h"
 
-class UEditableText;
+class UTextBlock;
 
 UCLASS()
 class UPlayerHUDUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
-public:
+protected:
+	virtual void NativeConstruct() override;
+	
 	UPROPERTY(meta = (BindWidget))
-	UEditableText* ScoreTextBox;
+	UTextBlock* ScoreTextBox;
+	
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TimerTextBox;
+	
+	UFUNCTION()
+	void UpdateScoreDisplay(int32 NewScore);
+	
+	UFUNCTION()
+	void UpdateTimerDisplay(int32 TimeRemaining);
+	
+private:
+	// loop timer to avoid network timing issues
+	void TryBindDelegates();
+	
+	FTimerHandle InitTimerHandle;
 };

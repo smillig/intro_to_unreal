@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "LobbyUserWidget.h"
+#include "PlayerHUDUserWidget.h"
 #include "SnakePlayerController.generated.h"
 
 UCLASS()
@@ -24,6 +25,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_ShowGameOverScreen();
 	
-protected:	
+	UFUNCTION(Client, Reliable)
+	void Client_ShowPlayerHud(TSubclassOf<UPlayerHUDUserWidget> PlayerWidgetClass);
+
+protected:
+
 	virtual void OnPossess(APawn* Pawn) override;
+	
 };

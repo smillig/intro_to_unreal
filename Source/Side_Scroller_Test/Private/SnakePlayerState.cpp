@@ -51,5 +51,6 @@ void ASnakePlayerState::AddScore(int32 Amount)
 	{
 		SnakeScore += Amount;
 		UE_LOG(LogTemp, Log, TEXT("Amount = %d added for Player: %s"), Amount, *SnakeName);
+		OnScoreChanged.Broadcast(SnakeScore);
 	}
 }

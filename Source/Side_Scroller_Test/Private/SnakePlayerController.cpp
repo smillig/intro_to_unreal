@@ -3,7 +3,7 @@
 
 #include "SnakePlayerController.h"
 #include "Blueprint/UserWidget.h"
-
+#include "GameFramework/GameMode.h"
 
 void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobbyUserWidget> WidgetClass)
 {
@@ -61,12 +61,34 @@ void ASnakePlayerController::Client_ShowGameOverScreen_Implementation()
 	
 }
 
+void ASnakePlayerController::Client_ShowPlayerHud_Implementation(TSubclassOf<UPlayerHUDUserWidget> PlayerWidgetClass)
+{
+	// This only fires when the Battle/Coop GameMode explicitly asks for it
+	if (PlayerWidgetClass && IsLocalController())
+	{
+		UUserWidget* PlayerWidget = CreateWidget<UUserWidget>(this, PlayerWidgetClass);
+		if (PlayerWidget)
+		{
+			PlayerWidget->AddToViewport();
+			
+			// Ensure Input is set up for gameplay
+			FInputModeGameOnly InputMode;
+			SetInputMode(InputMode);
+			bShowMouseCursor = false;
+		}
+	}
+}
+
 void ASnakePlayerController::Server_LeaveLobby_Implementation()
 {
 	if (!IsLocalController())
 	{
-		// GameMode->Logout(this);
+		AGameModeBase* CurrGameMode = GetWorld()->GetAuthGameMode();
+		if (CurrGameMode)
+		{
+			CurrGameMode->Logout(this);
+		}
 		// ClientTravel(TEXT("/Game/Maps/MainMenu"), ETravelType::TRAVEL_Absolute);
-		Destroy();
+		// Destroy();
 	}
 }
