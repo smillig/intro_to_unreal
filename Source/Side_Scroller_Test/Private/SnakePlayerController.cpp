@@ -92,3 +92,38 @@ void ASnakePlayerController::Server_LeaveLobby_Implementation()
 		// Destroy();
 	}
 }
+
+void ASnakePlayerController::Client_TogglePauseMenu_Implementation(bool bIsPaused)
+{
+	
+	if (!IsLocalController() || !PauseMenuWidgetClass) return;
+	UE_LOG(LogTemp, Warning, TEXT("Client_TogglePauseMenu called, local controller and widget are good."))
+	if (bIsPaused)
+	{
+		if (!PauseMenuWidget)
+		{
+			PauseMenuWidget = CreateWidget<UUserWidget>(this, PauseMenuWidgetClass);
+		}
+		
+		if (PauseMenuWidget && !PauseMenuWidget->IsInViewport())
+		{
+			PauseMenuWidget->AddToViewport();
+		}
+		
+		bShowMouseCursor = true;
+		FInputModeGameAndUI InputMode;
+		InputMode.SetWidgetToFocus(PauseMenuWidget->TakeWidget());
+		SetInputMode(InputMode);
+	}
+	else
+	{
+		if (PauseMenuWidget && PauseMenuWidget->IsInViewport())
+		{
+			PauseMenuWidget->RemoveFromParent();
+		}
+		
+		bShowMouseCursor = false;
+		FInputModeGameOnly InputMode;
+		SetInputMode(InputMode);
+	}
+}

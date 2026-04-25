@@ -61,7 +61,7 @@ void ASnakeGameMode::PostLogin(APlayerController* NewPlayer)
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("HUD CLASS IS NULL! Please open BP_BattleSnakeGameMode and set UPlayerHUDWidgetClass!"));
+			UE_LOG(LogTemp, Error, TEXT("HUD CLASS IS NULL! Please open BP_<This>GameMode and set UPlayerHUDWidgetClass!"));
 		}
 	}
 }
@@ -214,6 +214,25 @@ bool ASnakeGameMode::IsCellSafe(ASnakePawn* MovingSnake, FIntPoint TargetCell)
 	}
 	// Cell is totally empty of snakes!
 	return true;
+}
+
+void ASnakeGameMode::ToggleGamePause(AController* Requester)
+{
+	// Check current pause state and toggle it
+	bool bIsCurrentlyPaused = UGameplayStatics::IsGamePaused(GetWorld());
+	bool bNewPauseState = !bIsCurrentlyPaused;
+	
+	// pause the game
+	UGameplayStatics::SetGamePaused(GetWorld(), bNewPauseState);
+	
+	// loop through all players and show pause menu
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ASnakePlayerController* PlayerController = Cast<ASnakePlayerController>(It->Get()))
+		{
+			PlayerController->Client_TogglePauseMenu(bNewPauseState);
+		}
+	}
 }
 
 void ASnakeGameMode::HandleFoodEaten(AFoodActor* EatenFood, ASnakePawn* Eater)

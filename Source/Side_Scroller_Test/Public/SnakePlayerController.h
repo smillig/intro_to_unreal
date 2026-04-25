@@ -6,7 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "LobbyUserWidget.h"
 #include "PlayerHUDUserWidget.h"
+#include "PauseMenuUserWidget.h"
 #include "SnakePlayerController.generated.h"
+
 
 UCLASS()
 class SIDE_SCROLLER_TEST_API ASnakePlayerController : public APlayerController
@@ -14,8 +16,14 @@ class SIDE_SCROLLER_TEST_API ASnakePlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPauseMenuUserWidget> PauseMenuWidgetClass;
+	
 	UFUNCTION(Client, Reliable)
 	void Client_ShowLobbyUI(TSubclassOf<ULobbyUserWidget> WidgetClass);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_TogglePauseMenu(bool bIsPaused);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_LeaveLobby();
@@ -29,7 +37,9 @@ public:
 	void Client_ShowPlayerHud(TSubclassOf<UPlayerHUDUserWidget> PlayerWidgetClass);
 
 protected:
-
 	virtual void OnPossess(APawn* Pawn) override;
 	
+private:
+	UPROPERTY()
+	UUserWidget* PauseMenuWidget;	
 };

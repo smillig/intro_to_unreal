@@ -82,6 +82,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> TurnRightAction;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> PauseAction;
+	
 	// Seconds per grid step
 	UPROPERTY(EditAnywhere, Category = "Snake Logic")
 	float MoveInterval = 0.5f; 
@@ -140,6 +143,7 @@ protected:
 	void Input_TryTurnDown(const FInputActionValue& Value);
 	void Input_TryTurnLeft(const FInputActionValue& Value);
 	void Input_TryTurnRight(const FInputActionValue& Value);
+	void Input_TryPause(const FInputActionValue& Value);
 	
 	void HandleDirectionChange();
 	void UpdateDirection(ESnakeDirection NewDirection);
@@ -172,6 +176,10 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetRequestedDirection(ESnakeDirection NewDirection);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_RequestPause();
+	
 	UFUNCTION(Client, Reliable)
 	void Client_ResetLogic(FVector NewLocation);
 };

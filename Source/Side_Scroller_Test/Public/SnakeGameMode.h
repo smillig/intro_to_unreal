@@ -61,11 +61,12 @@ public:
 	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	
+	void ToggleGamePause(AController* Requester);
+	
 	FIntPoint GetNextSpawnCell();
 	
 	bool IsCellSafe(class ASnakePawn* MovingSnake, FIntPoint TargetCell);
 	
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UPlayerHUDUserWidget> UPlayerHUDWidgetClass;
-	
 };

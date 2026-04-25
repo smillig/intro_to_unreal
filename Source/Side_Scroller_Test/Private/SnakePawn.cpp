@@ -344,10 +344,9 @@ void ASnakePawn::PawnClientRestart()
 void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	// We check:
-	// 1. That the PlayerInputComponent is a UEnhancedInputComponent, which it should be if we're using the Enhanced Input system; and
-	// 2. That the MoveAction and TurnAction are set, to avoid binding to null actions
+	
+	// PlayerInputComponent is a UEnhancedInputComponent, which it should be if using the Enhanced Input system; and
+	// the MoveAction and TurnAction are set, to avoid binding to null actions
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		if (TurnUpAction)
@@ -367,6 +366,10 @@ void ASnakePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		{
 			EnhancedInputComponent->BindAction(TurnRightAction, ETriggerEvent::Triggered, this, &ASnakePawn::Input_TryTurnRight);
 		}
+		if (PauseAction)
+		{
+			EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Triggered, this, &ASnakePawn::Input_TryPause);
+		}
 	}
 
 }
@@ -383,7 +386,7 @@ void ASnakePawn::Input_TryTurnUp(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SnakePawn::Input_TryTurnUp"));
+		// UE_LOG(LogTemp, Warning, TEXT("SnakePawn::Input_TryTurnUp"));
 		Server_SetRequestedDirection(ESnakeDirection::Up);
 	}
 }
@@ -410,6 +413,27 @@ void ASnakePawn::Input_TryTurnRight(const FInputActionValue& Value)
 	{
 		Server_SetRequestedDirection(ESnakeDirection::Right);
 	}
+}
+
+void ASnakePawn::Input_TryPause(const FInputActionValue& Value)
+{
+	if (Value.Get<bool>())
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("SnakePawn::Input_TryPause"));
+		Server_RequestPause();
+	}
+}
+
+void ASnakePawn::Server_RequestPause_Implementation()
+{
+	// tell game mode we want to pause
+	// UE_LOG(LogTemp, Warning, TEXT("SnakePawn::Server_RequestPause_Implementation"));
+	if (ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		// tell game mode to call pause function with the controller that requested it
+		GM->ToggleGamePause(GetController());
+	}
+	
 }
 
 FVector ASnakePawn::GetVectorFromDirection(const ESnakeDirection Direction) const

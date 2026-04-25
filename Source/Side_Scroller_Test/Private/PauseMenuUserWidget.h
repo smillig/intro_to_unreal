@@ -13,6 +13,9 @@ class UPauseMenuUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
+protected:
+	virtual void NativeConstruct() override;
+	
 public:	
 	UPROPERTY(meta = (BindWidget))
 	UButton* Button_ResumeGame;
@@ -22,4 +25,13 @@ public:
 	
 	UPROPERTY(meta = (BindWidget))
 	UButton* Button_QuitGame;
+	
+	UFUNCTION()
+	void OnResumeClicked();
+	
+	UFUNCTION()
+	void OnToMainMenuClicked();
+	
+	UFUNCTION()
+	void OnQuitClicked();
 };
