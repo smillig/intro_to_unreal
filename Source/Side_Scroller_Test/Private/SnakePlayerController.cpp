@@ -58,7 +58,20 @@ void ASnakePlayerController::OnRep_Pawn()
 
 void ASnakePlayerController::Client_ShowGameOverScreen_Implementation()
 {
-	
+	// UE_LOG(LogTemp, Warning, TEXT("Client_ShowGameOverScreen called"))
+	if (GameOverWidgetClass && IsLocalController())
+	{
+		GameOverWidget = CreateWidget<UUserWidget>(this, GameOverWidgetClass);
+		if (GameOverWidget)
+		{
+			GameOverWidget->AddToViewport();
+			
+			bShowMouseCursor = true;
+			FInputModeGameAndUI InputMode;
+			InputMode.SetWidgetToFocus(GameOverWidget->TakeWidget());
+			SetInputMode(InputMode);
+		}
+	}
 }
 
 void ASnakePlayerController::Client_ShowPlayerHud_Implementation(TSubclassOf<UPlayerHUDUserWidget> PlayerWidgetClass)

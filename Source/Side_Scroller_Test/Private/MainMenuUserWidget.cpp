@@ -6,6 +6,7 @@
 #include "Components/WidgetSwitcher.h"
 #include "SnakeGameInstance.h"
 #include "SocketSubsystem.h"
+#include "SnakeGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "Components/EditableText.h"
@@ -65,10 +66,8 @@ void UMainMenuUserWidget::OnToJoinPageClicked()  { if(MenuSwitcher) MenuSwitcher
 
 void UMainMenuUserWidget::OnSoloClicked()
 {
-	if (auto GI = Cast<USnakeGameInstance>(GetGameInstance()))
-	{
-		GI->SelectedMode = EPlayMode::Solo;
-	}
+	ASnakeGameState* GS = GetWorld()->GetGameState<ASnakeGameState>();
+	if (GS) {GS->CurrentPlayMode = EPlayMode::Solo;}
 	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_Solo1"));
 }
 

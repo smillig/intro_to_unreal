@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SnakeGameInstance.h"
 #include "GameFramework/GameState.h"
 #include "SnakeGameState.generated.h"
 
@@ -28,4 +29,9 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	int32 CurrentLevel = 1;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	EPlayMode CurrentPlayMode = EPlayMode::None;
 };

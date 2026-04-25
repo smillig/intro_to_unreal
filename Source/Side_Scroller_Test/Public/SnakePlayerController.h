@@ -7,6 +7,7 @@
 #include "LobbyUserWidget.h"
 #include "PlayerHUDUserWidget.h"
 #include "PauseMenuUserWidget.h"
+#include "GameOverUserWidget.h"
 #include "SnakePlayerController.generated.h"
 
 
@@ -18,6 +19,9 @@ class SIDE_SCROLLER_TEST_API ASnakePlayerController : public APlayerController
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPauseMenuUserWidget> PauseMenuWidgetClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UGameOverUserWidget> GameOverWidgetClass;
 	
 	UFUNCTION(Client, Reliable)
 	void Client_ShowLobbyUI(TSubclassOf<ULobbyUserWidget> WidgetClass);
@@ -41,5 +45,8 @@ protected:
 	
 private:
 	UPROPERTY()
-	UUserWidget* PauseMenuWidget;	
+	UUserWidget* PauseMenuWidget;
+	
+	UPROPERTY()
+	UUserWidget* GameOverWidget;
 };

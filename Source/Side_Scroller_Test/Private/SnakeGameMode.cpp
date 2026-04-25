@@ -15,6 +15,16 @@ void ASnakeGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// apply game mode
+	if (USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance()))
+	{
+		if (ASnakeGameState* GS = GetGameState<ASnakeGameState>())
+		{
+			GS->CurrentPlayMode = GI->SelectedMode;
+			GS->CurrentLevel = 1;
+		}
+	}
+	
 	// Find managers
 	GridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
 	
@@ -272,6 +282,8 @@ void ASnakeGameMode::EndGame()
 {
 	GetWorldTimerManager().ClearTimer(MatchTimerHandle);
 	GetWorldTimerManager().ClearTimer(FoodSpawnTimerHandle);
+	
+	// UE_LOG(LogTemp, Warning, TEXT("Game Ended"));
 
 	// Tell all controllers the game is over to show the UI
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -281,4 +293,5 @@ void ASnakeGameMode::EndGame()
 			PC->Client_ShowGameOverScreen();
 		}
 	}
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
