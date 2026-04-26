@@ -3,6 +3,8 @@
 
 #include "SnakePlayerController.h"
 #include "Blueprint/UserWidget.h"
+#include "EngineUtils.h"
+#include "PlayerHUDUserWidget.h"
 #include "GameFramework/GameMode.h"
 
 void ASnakePlayerController::Client_ShowLobbyUI_Implementation(TSubclassOf<ULobbyUserWidget> WidgetClass)
@@ -61,6 +63,12 @@ void ASnakePlayerController::Client_ShowGameOverScreen_Implementation()
 	// UE_LOG(LogTemp, Warning, TEXT("Client_ShowGameOverScreen called"))
 	if (GameOverWidgetClass && IsLocalController())
 	{
+		// find and disable Hud widget
+		if (PlayerHUDWidget && PlayerHUDWidget->IsInViewport())
+		{
+			PlayerHUDWidget->RemoveFromParent();
+		}
+		
 		GameOverWidget = CreateWidget<UUserWidget>(this, GameOverWidgetClass);
 		if (GameOverWidget)
 		{
@@ -79,10 +87,10 @@ void ASnakePlayerController::Client_ShowPlayerHud_Implementation(TSubclassOf<UPl
 	// This only fires when the Battle/Coop GameMode explicitly asks for it
 	if (PlayerWidgetClass && IsLocalController())
 	{
-		UUserWidget* PlayerWidget = CreateWidget<UUserWidget>(this, PlayerWidgetClass);
-		if (PlayerWidget)
+		PlayerHUDWidget = CreateWidget<UUserWidget>(this, PlayerWidgetClass);
+		if (PlayerHUDWidget)
 		{
-			PlayerWidget->AddToViewport();
+			PlayerHUDWidget->AddToViewport();
 			
 			// Ensure Input is set up for gameplay
 			FInputModeGameOnly InputMode;

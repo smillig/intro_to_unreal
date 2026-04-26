@@ -49,4 +49,7 @@ private:
 	
 	UPROPERTY()
 	UUserWidget* GameOverWidget;
+	
+	UPROPERTY()
+	UUserWidget* PlayerHUDWidget;
 };

@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "SnakeGameInstance.h"
 #include "SnakePlayerState.h"
 #include "SnakeGameState.h"
 
@@ -113,9 +114,11 @@ void UGameOverUserWidget::OnNextLevelClicked()
 	if (PC && PC->HasAuthority())
 	{
 		ASnakeGameState* GS = GetWorld()->GetGameState<ASnakeGameState>();
-		if (GS)
+		USnakeGameInstance* GI = GetWorld()->GetGameInstance<USnakeGameInstance>();
+		if (GS && GI)
 		{
-			int32 NextLevelNum = GS->CurrentLevel + 1;
+			GI->CurrentSnakeLevel += 1;
+			int32 NextLevelNum = GI->CurrentSnakeLevel;
 			FString NextMapName = FString::Printf(TEXT("/Game/Snake/Levels/Lvl_MainMenu"));
 			switch (GS->CurrentPlayMode)
 			{
@@ -141,8 +144,10 @@ void UGameOverUserWidget::OnNextLevelClicked()
 					break;
 				}
 			}
-			GS->CurrentLevel++;
-			GetWorld()->ServerTravel(NextMapName, true);
+			GS->CurrentLevel = NextLevelNum;
+			UE_LOG(LogTemp, Log, TEXT("GameOverWidget Successfully set next level in GI to %d, GS: %d"), GI->CurrentSnakeLevel, GS->CurrentLevel);
+			// bAbsolute destroys the level information for some reason 
+			GetWorld()->ServerTravel(NextMapName, false);
 		}
 	}
 }

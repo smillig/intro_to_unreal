@@ -21,7 +21,9 @@ void ASnakeGameMode::BeginPlay()
 		if (ASnakeGameState* GS = GetGameState<ASnakeGameState>())
 		{
 			GS->CurrentPlayMode = GI->SelectedMode;
-			GS->CurrentLevel = 1;
+			GS->CurrentLevel = GI->CurrentSnakeLevel;
+			UE_LOG(LogTemp, Log, TEXT("ASnakeGameMode::BeginPlay() Level: %d ,Mode: %d"), GS->CurrentLevel, GS->CurrentPlayMode);
+			// GS->CurrentLevel = 1;
 		}
 	}
 	

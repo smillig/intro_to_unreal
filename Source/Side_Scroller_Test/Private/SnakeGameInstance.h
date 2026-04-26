@@ -24,6 +24,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
 	EPlayMode SelectedMode = EPlayMode::None;
 	
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	int32 CurrentSnakeLevel = 1;
+	
 	UFUNCTION(BlueprintCallable)
 	void HostGame();
 	

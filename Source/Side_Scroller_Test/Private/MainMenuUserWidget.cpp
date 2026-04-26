@@ -66,8 +66,9 @@ void UMainMenuUserWidget::OnToJoinPageClicked()  { if(MenuSwitcher) MenuSwitcher
 
 void UMainMenuUserWidget::OnSoloClicked()
 {
-	ASnakeGameState* GS = GetWorld()->GetGameState<ASnakeGameState>();
-	if (GS) {GS->CurrentPlayMode = EPlayMode::Solo;}
+	
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	if (GI) GI->SelectedMode = EPlayMode::Solo;
 	UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_Solo1"));
 }
 

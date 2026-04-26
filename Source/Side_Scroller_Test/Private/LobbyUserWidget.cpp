@@ -102,12 +102,16 @@ void ULobbyUserWidget::OnLeaveLobbyClicked()
 
 void ULobbyUserWidget::OnStartBattleClicked()
 {
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	if (GI) GI->SelectedMode = EPlayMode::BattleRoyale;
 	ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 	if (GM) GM->StartGame(EPlayMode::BattleRoyale);
 }
 
 void ULobbyUserWidget::OnStartCoopClicked()
 {
+	USnakeGameInstance* GI = Cast<USnakeGameInstance>(GetGameInstance());
+	if (GI) GI->SelectedMode = EPlayMode::CoOp;
 	ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 	if (GM) GM->StartGame(EPlayMode::CoOp);
 }
