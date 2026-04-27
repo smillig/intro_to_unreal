@@ -191,7 +191,7 @@ bool ASnakeGameMode::IsCellSafe(ASnakePawn* MovingSnake, FIntPoint TargetCell)
 			if (OtherSnake == MovingSnake)
 			{
 				// --- SELF COLLISION ---
-				if (MovingPS) MovingPS->AddScore(-50);
+				if (MovingPS) MovingPS->AddScore(DeathPointPenalty);
 				MovingSnake->HandleSnakeDeath();
 				return false;
 			}
@@ -205,8 +205,8 @@ bool ASnakeGameMode::IsCellSafe(ASnakePawn* MovingSnake, FIntPoint TargetCell)
 				if (bHeadToHead)
 				{
 					// Head to Head: Both penalized, both die
-					if (MovingPS) MovingPS->AddScore(-50);
-					if (OtherPS) OtherPS->AddScore(-50);
+					if (MovingPS) MovingPS->AddScore(DeathPointPenalty);
+					if (OtherPS) OtherPS->AddScore(DeathPointPenalty);
 					
 					MovingSnake->HandleSnakeDeath();
 					OtherSnake->HandleSnakeDeath();
@@ -215,8 +215,8 @@ bool ASnakeGameMode::IsCellSafe(ASnakePawn* MovingSnake, FIntPoint TargetCell)
 				{
 					// Hit their body. 
 					// MovingSnake crashed (Victim), OtherSnake cut them off (Attacker).
-					if (MovingPS) MovingPS->AddScore(-50); // Victim penalty
-					if (OtherPS) OtherPS->AddScore(100);   // Attacker reward
+					if (MovingPS) MovingPS->AddScore(DeathPointPenalty); // Victim penalty
+					if (OtherPS) OtherPS->AddScore(KillPointReward);   // Attacker reward
 
 					MovingSnake->HandleSnakeDeath();
 				}

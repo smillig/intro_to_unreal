@@ -42,6 +42,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Game Rules")
 	int32 MatchDurationSeconds = 180;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Game Rules")
+	int32 DeathPointPenalty = -50;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Game Rules")
+	int32 KillPointReward = 100;
+	
 	FTimerHandle FoodSpawnTimerHandle;
 	FTimerHandle MatchTimerHandle;
 	
