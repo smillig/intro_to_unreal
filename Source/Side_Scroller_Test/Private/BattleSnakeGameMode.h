@@ -21,6 +21,24 @@ protected:
 	
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 ItemSpawnCountLevel1 = 25;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 ItemSpawnCountLevel2 = 15;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 ItemSpawnCountLevel3 = 10;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PlayerMovementAdjustment1 = -0.1f;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PlayerMovementAdjustment2 = -0.2f;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PlayerMovementAdjustment3 = -0.3f;
+	
 public:
 	ABattleSnakeGameMode();
 	

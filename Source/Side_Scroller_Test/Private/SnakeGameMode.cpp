@@ -23,7 +23,6 @@ void ASnakeGameMode::BeginPlay()
 			GS->CurrentPlayMode = GI->SelectedMode;
 			GS->CurrentLevel = GI->CurrentSnakeLevel;
 			UE_LOG(LogTemp, Log, TEXT("ASnakeGameMode::BeginPlay() Level: %d ,Mode: %d"), GS->CurrentLevel, GS->CurrentPlayMode);
-			// GS->CurrentLevel = 1;
 		}
 	}
 	
@@ -78,7 +77,7 @@ void ASnakeGameMode::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
-
+// this has some unforeseen problems, I think on tick in grid should find occupied cells; food and snake
 void ASnakeGameMode::MaintainFoodCount()
 {
 	// get number of food on the board
@@ -141,7 +140,11 @@ void ASnakeGameMode::SpawnFood()
 		UE_LOG(LogTemp, Log, TEXT("Spawning food at %d"), RandomCell.X);
 		// GetWorld()->SpawnActor<AFoodActor>(FoodToSpawn, SpawnLocation, FRotator::ZeroRotator);
 		AFoodActor* NewFood = GetWorld()->SpawnActor<AFoodActor>(FoodToSpawn, SpawnLocation, FRotator::ZeroRotator);
-		NewFood->OnFoodEaten.AddDynamic(this, &ASnakeGameMode::HandleFoodEaten);
+		// ptr check in case food spawns on another food
+		if (NewFood)
+		{
+			NewFood->OnFoodEaten.AddDynamic(this, &ASnakeGameMode::HandleFoodEaten);
+		}
 	}
 }
 
@@ -231,20 +234,20 @@ bool ASnakeGameMode::IsCellSafe(ASnakePawn* MovingSnake, FIntPoint TargetCell)
 void ASnakeGameMode::ToggleGamePause(AController* Requester)
 {
 	// Check current pause state and toggle it
-	bool bIsCurrentlyPaused = UGameplayStatics::IsGamePaused(GetWorld());
-	bool bNewPauseState = !bIsCurrentlyPaused;
-	
-	// pause the game
-	UGameplayStatics::SetGamePaused(GetWorld(), bNewPauseState);
-	
-	// loop through all players and show pause menu
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		if (ASnakePlayerController* PlayerController = Cast<ASnakePlayerController>(It->Get()))
-		{
-			PlayerController->Client_TogglePauseMenu(bNewPauseState);
-		}
-	}
+    bool bIsCurrentlyPaused = UGameplayStatics::IsGamePaused(GetWorld());
+    bool bNewPauseState = !bIsCurrentlyPaused;
+    
+    // pause the game
+    UGameplayStatics::SetGamePaused(GetWorld(), bNewPauseState);
+    
+    // loop through all players and show pause menu
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (ASnakePlayerController* PlayerController = Cast<ASnakePlayerController>(It->Get()))
+        {
+        	PlayerController->Client_TogglePauseMenu(bNewPauseState);
+        }
+    }
 }
 
 void ASnakeGameMode::HandleFoodEaten(AFoodActor* EatenFood, ASnakePawn* Eater)

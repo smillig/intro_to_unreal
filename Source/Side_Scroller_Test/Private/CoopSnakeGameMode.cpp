@@ -27,6 +27,40 @@ void ACoopSnakeGameMode::BeginPlay()
 	
 	UE_LOG(LogTemp, Warning, TEXT("DefaultPawnClass = %s"),
 		*GetNameSafe(DefaultPawnClass));
+	
+	ASnakeGameState* GotGameState = GetGameState<ASnakeGameState>();
+	if (GotGameState)
+	{
+		int32 CurrentLevel = GotGameState->CurrentLevel;
+        switch (CurrentLevel)
+        {
+        	case 1:
+        		{
+        			MaxFoodOnBoard = ItemSpawnCountLevel1;
+        			CurrentMovementAdjustment = PlayerMovementAdjustment1;
+        			break;
+        		}
+        	case 2:
+        		{
+        			MaxFoodOnBoard = ItemSpawnCountLevel2; 
+        			CurrentMovementAdjustment = PlayerMovementAdjustment2;
+        			break;
+        		}
+        	case 3:
+        		{
+        			MaxFoodOnBoard = ItemSpawnCountLevel3;
+        			CurrentMovementAdjustment = PlayerMovementAdjustment3;
+        			break;
+        		}
+        	default:
+        		{
+        			MaxFoodOnBoard = ItemSpawnCountLevel1;
+        			CurrentMovementAdjustment = PlayerMovementAdjustment1;
+        			break;
+        		}
+        }
+	}
+	
 }
 
 void ACoopSnakeGameMode::HandleSeamlessTravelPlayer(AController*& Contr)
@@ -126,7 +160,6 @@ void ACoopSnakeGameMode::PostLogin(APlayerController* NewPlayerController)
 		}
 	}
 	Super::PostLogin(NewPlayerController);
-	// FORCE deterministic spawn (ONLY HERE)
 	RestartPlayer(NewPlayerController);
 }
 
@@ -145,7 +178,7 @@ FString ACoopSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerController
 	
 	if (NewPlayerController)
 	{
-		// 1. Grab the name from the URL
+		// Grab the name from the URL
 		FString InName = UGameplayStatics::ParseOption(Options, TEXT("PlayerName"));
 		
 		// Fallback if URL is empty (Usually true for the Host)
@@ -158,10 +191,10 @@ FString ACoopSnakeGameMode::InitNewPlayer(APlayerController* NewPlayerController
 		}
 		if (InName.IsEmpty()) InName = TEXT("UnknownSnakePlayer");
 
-		// 2. Store the Name for PostLogin
+		// Store the Name for PostLogin
 		PendingNames.Add(NewPlayerController, InName);
 
-		// 3. Assign their Slot ID right now (0, 1, 2...)
+		// Assign their Slot ID right now (0, 1, 2...)
 		PendingSlots.Add(NewPlayerController, NextSlotID++);
 	}
 

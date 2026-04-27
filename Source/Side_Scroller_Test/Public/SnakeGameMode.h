@@ -75,4 +75,6 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UPlayerHUDUserWidget> UPlayerHUDWidgetClass;
+	
+	float CurrentMovementAdjustment;
 };

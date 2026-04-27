@@ -4,6 +4,7 @@
 #include "PauseMenuUserWidget.h"
 #include "SnakePawn.h"
 #include "SnakePlayerController.h"
+#include "SnakeGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
 
@@ -28,6 +29,11 @@ void UPauseMenuUserWidget::OnToMainMenuClicked()
 {
 	ASnakePlayerController* PC = Cast<ASnakePlayerController>(GetOwningPlayer());
 	if (!PC) return;
+	USnakeGameInstance* GI = GetWorld()->GetGameInstance<USnakeGameInstance>();
+	if (GI)
+	{
+		GI->CurrentSnakeLevel = 1;
+	}
 	if (PC->HasAuthority())
 	{
 		UGameplayStatics::OpenLevel(GetWorld(), FName("Lvl_MainMenu"), true);

@@ -157,6 +157,11 @@ void UGameOverUserWidget::OnToMainMenuClicked()
 	APlayerController* PC = GetOwningPlayer();
 	if (PC)
 	{
+		USnakeGameInstance* GI = GetWorld()->GetGameInstance<USnakeGameInstance>();
+		if (GI)
+		{
+			GI->CurrentSnakeLevel = 1;
+		}
 		if (PC->HasAuthority())
 		{
 			// Server closes lobby, kicks everyone to main menu

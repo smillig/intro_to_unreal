@@ -87,7 +87,7 @@ protected:
 	
 	// Seconds per grid step
 	UPROPERTY(EditAnywhere, Category = "Snake Logic")
-	float MoveInterval = 0.5f; 
+	float MoveInterval = 0.5f;
 	
 	// Needs to be same size as grid TileSize
 	UPROPERTY(EditAnywhere, Category = "Snake Logic")
@@ -164,6 +164,9 @@ public:
 	
 	TArray<FIntPoint> GetOccupiedCells();
 	
+	UPROPERTY(Replicated, BlueprintReadWrite,  Category = "Snake Logic")
+	float MoveIntervalAdjustment = 0.0f;
+	
 	// For hooking in blueprints when eating food
 	UFUNCTION(BlueprintCallable)
 	void ModifySegments(int32 Amount);
@@ -182,4 +185,7 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_ResetLogic(FVector NewLocation);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetAdjustSnakeSpeed(float SpeedOffset);
 };

@@ -16,6 +16,43 @@ ASoloSnakeGameMode::ASoloSnakeGameMode()
 	PlayerControllerClass = ASnakePlayerController::StaticClass();
 }
 
+void ASoloSnakeGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	ASnakeGameState* GotGameState = GetGameState<ASnakeGameState>();
+	if (GotGameState)
+	{
+		int32 CurrentLevel = GotGameState->CurrentLevel;
+		switch (CurrentLevel)
+		{
+		case 1:
+			{
+				MaxFoodOnBoard = ItemSpawnCountLevel1;
+				CurrentMovementAdjustment = PlayerMovementAdjustment1;
+				break;
+			}
+		case 2:
+			{
+				MaxFoodOnBoard = ItemSpawnCountLevel2; 
+				CurrentMovementAdjustment = PlayerMovementAdjustment2;
+				break;
+			}
+		case 3:
+			{
+				MaxFoodOnBoard = ItemSpawnCountLevel3;
+				CurrentMovementAdjustment = PlayerMovementAdjustment3;
+				break;
+			}
+		default:
+			{
+				MaxFoodOnBoard = ItemSpawnCountLevel1;
+				CurrentMovementAdjustment = PlayerMovementAdjustment1;
+				break;
+			}
+		}
+	}
+}
+
 AActor* ASoloSnakeGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
 	// 1. Define the tag we are looking for

@@ -77,21 +77,16 @@ void ASnakePawn::BeginPlay()
 	SegmentLocations.Empty();
 	SegmentLocations.Add(SpawnLocation);
 
-	// Handle Input/Camera (Local Player Only)
-	// if (IsLocallyControlled())
-	// {
-	// 	// This sets the Input Mode and Mapping Context
-	// 	PawnClientRestart(); 
-	// }
+	// get gamestate and game mode
 
-	// 4. Visuals
+	// Visuals
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
 	UpdateDirection(CurrentDirection);
-	if (HeadMeshComponent) 
+	ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
 	{
-		// HeadMeshComponent->SetHiddenInGame(true);
-		// HeadMeshComponent->SetRelativeRotation(FRotator(0.0f, -180.0f, 0.0f));
+		MoveIntervalAdjustment = GM->CurrentMovementAdjustment;
 	}
 }
 
@@ -172,7 +167,7 @@ void ASnakePawn::Tick(float DeltaTime)
 void ASnakePawn::GridMove(float DeltaTime)
 {
 	// Check if in a tunnel or on a bridge or if in move interval time
-	if (!HasAuthority() || bIsMovementLocked || (MoveInterval <= 0.0f)) return;
+	if (!HasAuthority() || bIsMovementLocked || ((MoveInterval + MoveIntervalAdjustment) <= 0.0f)) return;
 
 	if (!bIsMovingToTarget)
 	{
@@ -214,7 +209,7 @@ void ASnakePawn::GridMove(float DeltaTime)
 		bIsMovingToTarget = true;
 	}
 
-	MoveInterpolationProgress += DeltaTime / MoveInterval;
+	MoveInterpolationProgress += DeltaTime / (MoveInterval + MoveIntervalAdjustment);
 	const float Alpha = FMath::Clamp(MoveInterpolationProgress, 0.f, 1.f);
 
 	// smoothly rotate head to target using quaternions for shortest path
@@ -302,6 +297,7 @@ void ASnakePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	DOREPLIFETIME(ASnakePawn, SegmentCount);
 	DOREPLIFETIME(ASnakePawn, SegmentLocations);
 	DOREPLIFETIME(ASnakePawn, CurrentDirection);
+	DOREPLIFETIME(ASnakePawn, MoveIntervalAdjustment);
 }
 
 void ASnakePawn::OnRep_CurrentDirection()
@@ -716,4 +712,9 @@ void ASnakePawn::UpdateSplineVisuals()
         SMC->SetStartAndEnd(LocalStart, LocalStartTangent.GetClampedToMaxSize(TileSize), 
                             LocalEnd, LocalEndTangent.GetClampedToMaxSize(TileSize), true);
 	}
+}
+
+void ASnakePawn::Client_SetAdjustSnakeSpeed_Implementation(float SpeedOffset)
+{
+	MoveIntervalAdjustment = SpeedOffset;
 }
