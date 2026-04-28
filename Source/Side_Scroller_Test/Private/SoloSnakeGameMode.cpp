@@ -4,6 +4,7 @@
 #include "SoloSnakeGameMode.h"
 #include "SnakePlayerState.h"
 #include "SnakePlayerController.h"
+#include "SoloSnakeGameState.h"
 #include "EngineUtils.h"
 #include "SnakeGameState.h"
 #include "GameFramework/PlayerStart.h"
@@ -11,15 +12,18 @@
 ASoloSnakeGameMode::ASoloSnakeGameMode()
 {
 	// Point this GameMode to use your specific Battle classes
-	GameStateClass = ASnakeGameState::StaticClass();
+	GameStateClass = ASoloSnakeGameState::StaticClass();
 	PlayerStateClass = ASnakePlayerState::StaticClass();
 	PlayerControllerClass = ASnakePlayerController::StaticClass();
+	
+	bUseSeamlessTravel = false;
 }
 
 void ASoloSnakeGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	ASnakeGameState* GotGameState = GetGameState<ASnakeGameState>();
+	
+	ASoloSnakeGameState* GotGameState = GetGameState<ASoloSnakeGameState>();
 	if (GotGameState)
 	{
 		int32 CurrentLevel = GotGameState->CurrentLevel;
@@ -27,29 +31,35 @@ void ASoloSnakeGameMode::BeginPlay()
 		{
 		case 1:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel1;
-				CurrentMovementAdjustment = PlayerMovementAdjustment1;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel1;
+				// GotGameState->CurrentMovementAdjustment = GotGameState->PlayerMovementAdjustment1;
+				// UE_LOG(LogTemp, Warning, TEXT("CurrentMovementAdjustment: %f"), GotGameState->CurrentMovementAdjustment);
 				break;
 			}
 		case 2:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel2; 
-				CurrentMovementAdjustment = PlayerMovementAdjustment2;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel2; 
+				// CurrentMovementAdjustment = PlayerMovementAdjustment2;
 				break;
 			}
 		case 3:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel3;
-				CurrentMovementAdjustment = PlayerMovementAdjustment3;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel3;
+				// CurrentMovementAdjustment = PlayerMovementAdjustment3;
 				break;
 			}
 		default:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel1;
-				CurrentMovementAdjustment = PlayerMovementAdjustment1;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel1;
+				// CurrentMovementAdjustment = PlayerMovementAdjustment1;
 				break;
 			}
 		}
+		UE_LOG(LogTemp, Warning, TEXT("MaxFoodOnBoard: %d"), MaxFoodOnBoard);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MaxFoodOnBoard not set"));
 	}
 }
 

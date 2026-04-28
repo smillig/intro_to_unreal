@@ -4,6 +4,7 @@
 #include "SnakePawn.h"
 #include "AGridGenerator.h"
 #include "SnakeGameMode.h"
+#include "SnakeGameState.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
@@ -83,10 +84,11 @@ void ASnakePawn::BeginPlay()
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
 	UpdateDirection(CurrentDirection);
-	ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode());
-	if (GM)
+	ASnakeGameState* GS = Cast<ASnakeGameState>(GetWorld()->GetGameState());
+	if (GS)
 	{
-		MoveIntervalAdjustment = GM->CurrentMovementAdjustment;
+		MoveIntervalAdjustment = GS->CurrentMovementAdjustment;
+		UE_LOG(LogTemp, Warning, TEXT("SnakePawn : Movement is now %f"), MoveIntervalAdjustment);
 	}
 }
 

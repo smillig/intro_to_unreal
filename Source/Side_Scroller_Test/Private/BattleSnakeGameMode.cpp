@@ -27,7 +27,7 @@ void ABattleSnakeGameMode::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("DefaultPawnClass = %s"),
 		*GetNameSafe(DefaultPawnClass));
 	
-	ASnakeGameState* GotGameState = GetGameState<ASnakeGameState>();
+	ABattleSnakeGameState* GotGameState = GetGameState<ABattleSnakeGameState>();
 	if (GotGameState)
 	{
 		int32 CurrentLevel = GotGameState->CurrentLevel;
@@ -35,26 +35,22 @@ void ABattleSnakeGameMode::BeginPlay()
 		{
 		case 1:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel1;
-				CurrentMovementAdjustment = PlayerMovementAdjustment1;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel1;
 				break;
 			}
 		case 2:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel2; 
-				CurrentMovementAdjustment = PlayerMovementAdjustment2;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel2; 
 				break;
 			}
 		case 3:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel3;
-				CurrentMovementAdjustment = PlayerMovementAdjustment3;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel3;
 				break;
 			}
 		default:
 			{
-				MaxFoodOnBoard = ItemSpawnCountLevel1;
-				CurrentMovementAdjustment = PlayerMovementAdjustment1;
+				MaxFoodOnBoard = GotGameState->ItemSpawnCountLevel1;
 				break;
 			}
 		}

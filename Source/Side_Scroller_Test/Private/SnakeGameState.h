@@ -26,6 +26,9 @@ public:
 	
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	FString ServerDisplayIP = "127.0.0.1:7777";
+	
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	float CurrentMovementAdjustment = 0.0f;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	

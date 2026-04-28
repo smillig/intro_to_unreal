@@ -12,6 +12,7 @@ void ASnakeGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ASnakeGameState, MatchTimeRemaining);
 	DOREPLIFETIME(ASnakeGameState, CurrentLevel);
 	DOREPLIFETIME(ASnakeGameState, CurrentPlayMode);
+	DOREPLIFETIME(ASnakeGameState, CurrentMovementAdjustment);
 }
 
 void ASnakeGameState::OnRep_MatchTimeRemaining()

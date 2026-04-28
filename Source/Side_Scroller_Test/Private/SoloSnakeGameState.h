@@ -4,34 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "SnakeGameState.h"
-#include "CoopSnakeGameState.generated.h"
+#include "SoloSnakeGameState.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
-class ACoopSnakeGameState : public ASnakeGameState
+class ASoloSnakeGameState : public ASnakeGameState
 {
 	GENERATED_BODY()
 	
 public:
 	UPROPERTY(Replicated, BlueprintReadWrite)
-	int32 ItemSpawnCountLevel1 = 15;
+	int32 ItemSpawnCountLevel1 = 35;
     
 	UPROPERTY(Replicated, BlueprintReadWrite)
-	int32 ItemSpawnCountLevel2 = 10;
+	int32 ItemSpawnCountLevel2 = 20;
     
 	UPROPERTY(Replicated, BlueprintReadWrite)
-	int32 ItemSpawnCountLevel3 = 5;
+	int32 ItemSpawnCountLevel3 = 15;
 	
 	UPROPERTY(Replicated, BlueprintReadWrite)
-	float PlayerMovementAdjustment1 = -0.1f;
+	float PlayerMovementAdjustment1 = -0.075f;
     
 	UPROPERTY(Replicated, BlueprintReadWrite)
-	float PlayerMovementAdjustment2 = -0.25f;
+	float PlayerMovementAdjustment2 = -0.1f;
     
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PlayerMovementAdjustment3 = -0.4f;
+	UPROPERTY(Replicated, BlueprintReadWrite)
+	float PlayerMovementAdjustment3 = -0.15f;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
