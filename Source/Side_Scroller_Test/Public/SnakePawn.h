@@ -15,6 +15,8 @@ class USplineMeshComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class UAudioComponent;
+class USoundBase;
 class AAGridGenerator;
 struct FGridCell;
 
@@ -95,6 +97,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Debug")
 	bool bIsDrawDebugInfo = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sound")
+	UAudioComponent* AudioComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* SnakeDeathSound;
 	
 	UPROPERTY()
 	AAGridGenerator* GridGen;

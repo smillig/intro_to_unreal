@@ -5,6 +5,7 @@
 #include "AGridGenerator.h"
 #include "SnakeGameMode.h"
 #include "SnakeGameState.h"
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
@@ -57,6 +58,10 @@ ASnakePawn::ASnakePawn()
 	SnakeSpline->SetupAttachment(RootComponent);
 	// sets so location is updated through UpdateSplineVisuals
 	SnakeSpline->SetUsingAbsoluteLocation(true);
+	
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
+	AudioComponent->SetupAttachment(RootComponent);
+	AudioComponent->bAutoActivate = false;
 }
 
 // Called when the game starts or when spawned
@@ -84,6 +89,10 @@ void ASnakePawn::BeginPlay()
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
 	UpdateDirection(CurrentDirection);
+	if (SnakeDeathSound && AudioComponent)
+	{
+		AudioComponent->SetSound(SnakeDeathSound);
+	}
 	ASnakeGameState* GS = Cast<ASnakeGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
@@ -537,6 +546,10 @@ bool ASnakePawn::WouldHitWall(const FIntPoint& NextCell) const
 
 void ASnakePawn::HandleSnakeDeath()
 {
+	if (SnakeDeathSound && AudioComponent)
+	{
+		AudioComponent->Play();
+	}
 	if (bIsDead)
 	{
 		return;
@@ -547,7 +560,7 @@ void ASnakePawn::HandleSnakeDeath()
 
 	// Pauses for a moment, then reset snake to starting position and direction for now:
 	// We can do a delay and call the ResetSnake method like this:
-	GetWorldTimerManager().SetTimer(ResetTimerHandle, this, &ASnakePawn::ResetSnake, 1.f, false); // 1 second delay, not looping
+	GetWorldTimerManager().SetTimer(ResetTimerHandle, this, &ASnakePawn::ResetSnake, 3.1f, false); // 1 second delay, not looping
 }
 
 void ASnakePawn::ResetSnake()

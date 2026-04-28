@@ -11,6 +11,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnFoodEatenSignature, class AFoodA
 
 class USphereComponent;
 class UStaticMeshComponent;
+class UAudioComponent;
+class UNiagaraSystem;
+class UNiagaraComponent;
+class USoundBase;
 
 UENUM(BlueprintType)
 enum class EFoodType : uint8 { Apple, Egg, Mushroom };
@@ -45,6 +49,21 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* FoodStaticMeshComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+	UNiagaraSystem* SpawnNiagaraEffect;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effects")
+	UNiagaraComponent* SpawnNiagara;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Food Properties")
+	UAudioComponent* AudioComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* EatenSound;
+	
+	UFUNCTION()
+	void OnSoundFinished();
 	
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

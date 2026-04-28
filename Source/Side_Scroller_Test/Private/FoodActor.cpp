@@ -3,8 +3,10 @@
 
 #include "FoodActor.h"
 #include "SnakePawn.h"
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
+#include "NiagaraComponent.h"
 
 // Sets default values
 AFoodActor::AFoodActor()
@@ -25,6 +27,14 @@ AFoodActor::AFoodActor()
 	FoodStaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	CollisionSphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AFoodActor::OnOverlap);
+	
+	SpawnNiagara = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SpawnNiagara"));
+	SpawnNiagara->SetupAttachment(RootComponent);
+	SpawnNiagara->bAutoActivate = false;
+	
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
+	AudioComponent->SetupAttachment(RootComponent);
+	AudioComponent->bAutoActivate = false;
 }
 void AFoodActor::BeginPlay()
 {
@@ -35,21 +45,50 @@ void AFoodActor::BeginPlay()
 	{
 		SetLifeSpan(LifeTime);
 	}
+	// particle effects
+	if (SpawnNiagaraEffect && SpawnNiagara)
+	{
+		SpawnNiagara->SetAsset(SpawnNiagaraEffect);
+		SpawnNiagara->Activate(true);
+	}
+	// sound setup
+	if (EatenSound && AudioComponent)
+	{
+		AudioComponent->SetSound(EatenSound);
+	}
 }
 
 void AFoodActor::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (ASnakePawn* SnakePawn = Cast<ASnakePawn>(OtherActor))
 	{
-		// Moving this to Message
-		// send message to game mode to then handle snake adding segment
-		// SnakePawn->AddSegment(); // could pass snake ScoreValue to grow or shrink
-		// UE_LOG(LogTemp, Log, TEXT("Ate a food worth %d points"), ScoreValue);
-		
-		// broadcast the food was eaten by whom
-		OnFoodEaten.Broadcast(this, SnakePawn);
-		// destroy food once eaten (Collided)
-		Destroy();
+		if (EatenSound && AudioComponent)
+		{
+			AudioComponent->Play();
+			AudioComponent->OnAudioFinished.AddDynamic(this, &AFoodActor::OnSoundFinished);
+			// Disable collision and hide mesh
+			CollisionSphereComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			FoodStaticMeshComponent->SetVisibility(false);
+
+			// Notify GameMode
+			OnFoodEaten.Broadcast(this, SnakePawn);
+		}
+		else
+		{
+			// broadcast the food was eaten by whom
+            OnFoodEaten.Broadcast(this, SnakePawn);
+            // destroy food once eaten (Collided)
+            Destroy();
+		}
 	}
+}
+
+void AFoodActor::OnSoundFinished()
+{
+	// Unbind to prevent multiple calls
+	AudioComponent->OnAudioFinished.RemoveDynamic(this, &AFoodActor::OnSoundFinished);
+
+	// Destroy after sound finishes
+	Destroy();
 }
 
