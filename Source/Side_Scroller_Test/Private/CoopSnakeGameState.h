@@ -30,7 +30,7 @@ public:
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	float PlayerMovementAdjustment2 = -0.25f;
     
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Replicated, BlueprintReadWrite)
 	float PlayerMovementAdjustment3 = -0.4f;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
