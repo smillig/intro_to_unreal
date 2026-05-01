@@ -13,10 +13,13 @@ UENUM(BlueprintType)
 enum class EGridDensity : uint8 { Off, Low, Medium, High };
 
 UENUM(BlueprintType)
-enum class EfeaturLength : uint8 { Short, Medium, Long };
+enum class EFeatureLength : uint8 { Short, Medium, Long };
 
 UENUM(BlueprintType)
 enum class ECellType : uint8 { Empty, Flat, RampUp, RampDown, Elevated, Hole, Blocked };
+
+UENUM(BlueprintType)
+enum class EOccupierType: uint8 { None, Food, SnakeBody, SnakeHead, Obstacle };
 
 USTRUCT(BlueprintType)
 struct FGridCell
@@ -36,7 +39,7 @@ struct FGridCell
 	UPROPERTY()
 	bool bIsForcedPath = false;
 
-	// Locked tragectory if ForcedPath
+	// Locked trajectory if ForcedPath
 	UPROPERTY()
 	FVector ForcedDir = FVector::ZeroVector;
 
@@ -44,17 +47,25 @@ struct FGridCell
 	int32 Layer = 0;
 };
 
-USTRUCT()
-struct FOccupancyData
+USTRUCT(BlueprintType)
+struct FGridOccupancy
 {
 	GENERATED_BODY()
-	
 	UPROPERTY()
-	ASnakePawn* OwnerPawn = nullptr;
-	
-	int32 Layer = 0;
+	EOccupierType Type = EOccupierType::None;
+	UPROPERTY()
+	AActor* OccupierActor = nullptr;
 };
 
+USTRUCT()
+struct FGridMoveResult
+{
+	GENERATED_BODY()
+	UPROPERTY()
+	EOccupierType HitType = EOccupierType::None;
+	UPROPERTY()
+	AActor* HitActor = nullptr;
+};
 
 UCLASS()
 class SIDE_SCROLLER_TEST_API AAGridGenerator : public AActor
@@ -83,7 +94,7 @@ public:
 	EGridDensity BridgeDensity = EGridDensity::Off;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Features")
-	EfeaturLength BridgeLength = EfeaturLength::Short;
+	EFeatureLength BridgeLength = EFeatureLength::Short;
 
 	// Meshes and Instanced Rendering stuff
 	UPROPERTY(VisibleAnywhere)
@@ -104,39 +115,35 @@ public:
 	UFUNCTION()
 	void OnRep_MapSeed();
 
-protected:
-	// Called when the game starts or when spawned
-	// virtual void BeginPlay() override;
-	virtual void OnConstruction(const FTransform& Transform) override;
-	virtual void BeginPlay() override;
-	virtual void PreInitializeComponents() override;
-	
-	// Map key is FIntPoint(X, Y), Value is a list of who is at what layer there
-	TMap<FIntPoint, TArray<FOccupancyData>> OccupancyMap;
-	
-	// future multiplayer
-	// Server-only function to update the map
-	// void UpdateOccupancy(ASnakePawn* Pawn, const TArray<FIntPoint>& OldPositions, const TArray<int32>& OldLayers, const TArray<FIntPoint>& NewPositions, const TArray<int32>& NewLayers);
-	//
-	// bool IsLocationBlocked(FIntPoint GridPos, int32 Layer, ASnakePawn* RequestingPawn);
-
-public:
+	TArray<FGridCell> GridData;
+	TMap<FIntVector, FGridOccupancy> OccupancyMap;
 	// replication function
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	// Called every frame
-	// virtual void Tick(float DeltaTime) override;
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void PreInitializeComponents() override;
 	const int32 TotalLayers = 3;
-	TArray<FGridCell> GridData;
+	
+	void RegisterSnake(ASnakePawn* Snake, const TArray<FIntVector>& InitialSegments);
+	FGridMoveResult RequestMove(ASnakePawn* Snake, FIntVector NewHeadPos, FIntVector OldTailPos, bool bIsGrowing);
+	bool TryClaimCell(FIntVector CellLocation, AActor* Requestor, EOccupierType OccupierType);
+	void ClearCell(FIntVector CellLocation);
+	
+	TArray<FIntVector> GetAllEmptyCells();
+	bool IsTerrainWalkable(FIntVector Location) const;
+	FVector GridToWorld(FIntVector GridLocation) const;
+	FIntVector WorldToGridLocation(const FVector& WorldPosition) const;
+
+	// Helper functions for indexing and 2D to 1D conversion
+	int32 GetIndex(int32 X, int32 Y, int32 Z) const { return (Z * Width * Height) + (Y * Width) + X; }
+	bool IsInBounds(int32 Xpos, int32 Ypos) const { return Xpos >= 0 && Xpos < Width && Ypos >= 0 && Ypos < Height; }
+	
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 	void GenerateGrid();
 	void ClearGrid();
 	void WrapWalls();
 	void TryPlaceBridge(FRandomStream& Stream);
 	void TryPlaceHole(FRandomStream& Stream);
-
-	// Helper functions for indexing and 2D to 1D conversion
-	int32 GetIndex(int32 Xpos, int32 Ypos, int32 Zpos) const { return (Zpos * Width * Height) + (Ypos * Width) + Xpos; }
-	bool IsInBounds(int32 Xpos, int32 Ypos) const { return Xpos >= 0 && Xpos < Width && Ypos >= 0 && Ypos < Height; }
-	
-	TArray<FIntPoint> GetWalkableCells(int32 Layer) const;
 };

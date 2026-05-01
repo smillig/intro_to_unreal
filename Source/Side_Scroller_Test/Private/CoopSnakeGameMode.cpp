@@ -93,7 +93,7 @@ AActor* ACoopSnakeGameMode::ChoosePlayerStart_Implementation(AController* Player
 	}
 
 	// It doesn't exist yet! Let's get the calculated spot and spawn one dynamically.
-	FIntPoint SpawnGridPos = GetNextSpawnCell();
+	FIntVector SpawnGridPos = GetNextSpawnCell();
 	AAGridGenerator* LocalGridGen = Cast<AAGridGenerator>(UGameplayStatics::GetActorOfClass(GetWorld(), AAGridGenerator::StaticClass()));
 
 	if (LocalGridGen)

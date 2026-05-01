@@ -69,9 +69,7 @@ public:
 	
 	void ToggleGamePause(AController* Requester);
 	
-	FIntPoint GetNextSpawnCell();
-	
-	bool IsCellSafe(class ASnakePawn* MovingSnake, FIntPoint TargetCell);
+	FIntVector GetNextSpawnCell();
 	
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UPlayerHUDUserWidget> UPlayerHUDWidgetClass;

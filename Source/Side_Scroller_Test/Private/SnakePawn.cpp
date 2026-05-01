@@ -74,17 +74,22 @@ void ASnakePawn::BeginPlay()
 	GridGen = Cast<AAGridGenerator>(FoundActor);
 
 	// Engine spawn location from game mode
-	FVector SpawnLocation = GetActorLocation();
-	CurrentGridLocation.X = FMath::RoundToInt(SpawnLocation.X / TileSize);
-	CurrentGridLocation.Y = FMath::RoundToInt(SpawnLocation.Y / TileSize);
+	FVector WorldSpawnLocation = GetActorLocation();
 	
-	StepStartWorldLocation = SpawnLocation;
-	StepTargetWorldLocation = SpawnLocation;
-	SegmentLocations.Empty();
-	SegmentLocations.Add(SpawnLocation);
+	StepStartWorldLocation = WorldSpawnLocation;
+	StepTargetWorldLocation = WorldSpawnLocation;
+	CurrentGridLocation = WorldToGridLocation(WorldSpawnLocation);
+	CurrentLayer = CurrentGridLocation.Z;
+	
+	SegmentGridLocations.Empty();
+	SegmentGridLocations.Add(CurrentGridLocation);
+	SegmentGridLocations.Add(CurrentGridLocation);
 
-	// get gamestate and game mode
-
+	if (HasAuthority() && GridGen)
+	{
+		GridGen->RegisterSnake(this, SegmentGridLocations);
+	}
+	
 	// Visuals
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
@@ -181,71 +186,71 @@ void ASnakePawn::GridMove(float DeltaTime)
 	if (!HasAuthority() || bIsMovementLocked || ((MoveInterval + MoveIntervalAdjustment) <= 0.0f)) return;
 
 	if (!bIsMovingToTarget)
-	{
-		// If at target, check for direction change and update target location
-		HandleDirectionChange();
+    {
+        HandleDirectionChange();
 
-		const FIntPoint GridOffset = DirectionToGridOffset(CurrentDirection);
-		PendingNextGridLocation = CurrentGridLocation + GridOffset;
+        // Where to go next
+        PendingNextGridLocation = CalculateNextGridLocation(CurrentDirection);
 
-		CheckLayerTransition(PendingNextGridLocation.X, PendingNextGridLocation.Y);
-		
-		// check for wall or level collisions
-		if (WouldHitWall(PendingNextGridLocation))
-		{
-			if (ASnakePlayerState* PS = GetPlayerState<ASnakePlayerState>())
-			{
-				PS->AddScore(-50); // should move these to penalty variables
-			}
-			HandleSnakeDeath();
-			return;
-		}
-		
-		// handle collisions with snakes
-		if (ASnakeGameMode* GameMode = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			// ISCellSafe handles points and calls HandleSnakeDeath
-			if (!GameMode->IsCellSafe(this, PendingNextGridLocation))
-			{
-				// no more movement
-				return;
-			}
-		}
+        // Ask grid for data
+        FIntVector OldTail = SegmentGridLocations.Num() > 0 ? SegmentGridLocations.Last() : CurrentGridLocation;
+        bool bIsGrowing = (PendingGrowthAmount > 0);
+        
+        FGridMoveResult MoveResult = GridGen->RequestMove(this, PendingNextGridLocation, OldTail, bIsGrowing);
 
-		StepStartWorldLocation = GetActorLocation();
-		StepTargetWorldLocation = GridToWorldLocation(PendingNextGridLocation);
-		// Since we're just starting to move towards the new target, we reset the interpolation progress to 0
-		MoveInterpolationProgress = 0.f; 
-		HeadStartRotation = HeadMeshComponent->GetRelativeRotation();
-		bIsMovingToTarget = true;
-	}
+        // Handle Results
+        if (MoveResult.HitType == EOccupierType::SnakeBody || MoveResult.HitType == EOccupierType::Obstacle)
+        {
+        	// TODO: fix magic number here
+            if (ASnakePlayerState* PS = GetPlayerState<ASnakePlayerState>()) { PS->AddScore(-50); }
+            HandleSnakeDeath();
+            return;
+        }
 
-	MoveInterpolationProgress += DeltaTime / (MoveInterval + MoveIntervalAdjustment);
-	const float Alpha = FMath::Clamp(MoveInterpolationProgress, 0.f, 1.f);
+        // Setup Visual Lerp
+        StepStartWorldLocation = GetActorLocation();
+        StepTargetWorldLocation = GridGen->GridToWorld(PendingNextGridLocation) + FVector(0,0, VerticalOffset);
+        MoveInterpolationProgress = 0.f; 
+        HeadStartRotation = HeadMeshComponent->GetRelativeRotation();
+        bIsMovingToTarget = true;
+    }
 
-	// smoothly rotate head to target using quaternions for shortest path
-	FQuat QStart = HeadStartRotation.Quaternion();
-	FQuat QTarget = HeadTargetRotation.Quaternion();
-	FQuat QInterp = FQuat::Slerp(QStart, QTarget, Alpha);
-	HeadMeshComponent->SetWorldRotation(QInterp);
-	// Use Lerp for constant speed across the cell
+    // Visuals update
+    MoveInterpolationProgress += DeltaTime / (MoveInterval + MoveIntervalAdjustment);
+    const float Alpha = FMath::Clamp(MoveInterpolationProgress, 0.f, 1.f);
+
+    FQuat QStart = HeadStartRotation.Quaternion();
+    FQuat QTarget = HeadTargetRotation.Quaternion();
+	HeadMeshComponent->SetWorldRotation(FQuat::Slerp(QStart, QTarget, Alpha));
 	const FVector NewLocation = FMath::Lerp(StepStartWorldLocation, StepTargetWorldLocation, Alpha);
 	SetActorLocation(NewLocation, false);
 
-	if (Alpha >= 1.f)
-	{
-		HeadMeshComponent->SetRelativeRotation(HeadTargetRotation);
-		// Update Segment logic positions
-		for (int32 i = SegmentLocations.Num() - 1; i > 0; i--) {
-			SegmentLocations[i] = SegmentLocations[i - 1];
-		}
-		SegmentLocations[0] = StepStartWorldLocation; // Where the head just came from
-		
-		// reached the target grid location
-		CurrentGridLocation = PendingNextGridLocation;
-		
-		bIsMovingToTarget = false; // We're now at the target, so we can start the process again on the next tick
-	}
+    // End of Step Logic Update
+    if (Alpha >= 1.f)
+    {
+        HeadMeshComponent->SetRelativeRotation(HeadTargetRotation);
+        
+        if (PendingGrowthAmount > 0)
+        {
+            // Insert head, don't drop tail
+            SegmentGridLocations.Insert(CurrentGridLocation, 0); 
+            PendingGrowthAmount--;
+            SegmentCount++; // Replicates to clients for visuals
+        }
+        else
+        {
+            // Normal slither
+            for (int32 i = SegmentGridLocations.Num() - 1; i > 0; i--) {
+                SegmentGridLocations[i] = SegmentGridLocations[i - 1];
+            }
+            if (SegmentGridLocations.Num() > 0) {
+                SegmentGridLocations[0] = CurrentGridLocation;
+            }
+        }
+
+        CurrentGridLocation = PendingNextGridLocation;
+        bIsMovingToTarget = false; 
+    }
 }
 
 void ASnakePawn::CheckLayerTransition(int32 TargetX, int32 TargetY)
@@ -274,12 +279,13 @@ void ASnakePawn::CheckLayerTransition(int32 TargetX, int32 TargetY)
 
 void ASnakePawn::ModifySegments(int32 Amount)
 {
+	PendingGrowthAmount += Amount;
 	if (Amount > 0)
 	{
 		for (int i = 0; i < Amount; i++)
 		{
-			FVector LastLoc = SegmentLocations.Num() > 0 ? SegmentLocations.Last() : GetActorLocation();
-			SegmentLocations.Add(LastLoc);
+			FIntVector LastLoc = SegmentGridLocations.Num() > 0 ? SegmentGridLocations.Last() : CurrentGridLocation;
+			SegmentGridLocations.Add(LastLoc);
 			SegmentCount++;
 		}
 	}
@@ -290,7 +296,7 @@ void ASnakePawn::ModifySegments(int32 Amount)
 		{
 			if (SegmentCount > 0)
 			{
-				SegmentLocations.Pop();
+				SegmentGridLocations.Pop();
 				SegmentCount--;
 			}
 			else
@@ -306,7 +312,7 @@ void ASnakePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASnakePawn, SegmentCount);
-	DOREPLIFETIME(ASnakePawn, SegmentLocations);
+	DOREPLIFETIME(ASnakePawn, SegmentGridLocations);
 	DOREPLIFETIME(ASnakePawn, CurrentDirection);
 	DOREPLIFETIME(ASnakePawn, MoveIntervalAdjustment);
 }
@@ -513,7 +519,7 @@ FIntPoint ASnakePawn::DirectionToGridOffset(ESnakeDirection Direction) const
 	}
 }
 
-FVector ASnakePawn::GridToWorldLocation(const FIntPoint& GridPosition) const
+FVector ASnakePawn::GridToWorldLocation(const FIntVector& GridPosition) const
 {
 	float TargetZ = 0.0f;
 	if (GridGen)
@@ -525,6 +531,20 @@ FVector ASnakePawn::GridToWorldLocation(const FIntPoint& GridPosition) const
 		}
 	}
 	return FVector(GridPosition.X * TileSize, GridPosition.Y * TileSize, TargetZ + VerticalOffset);
+}
+
+FIntVector ASnakePawn::WorldToGridLocation(const FVector& WorldPosition) const
+{
+	float TargetZ = 0.0f;
+	if (GridGen)
+	{
+		int32 Idx = GridGen->GetIndex(WorldPosition.X, WorldPosition.Y, CurrentLayer);
+		if (GridGen->GridData.IsValidIndex(Idx))
+		{
+			TargetZ = GridGen->GridData[Idx].ZOffset;
+		}
+	}
+	return FIntVector(WorldPosition.X / TileSize, WorldPosition.Y / TileSize, TargetZ + VerticalOffset);
 }
 
 bool ASnakePawn::WouldHitWall(const FIntPoint& NextCell) const
@@ -565,7 +585,7 @@ void ASnakePawn::HandleSnakeDeath()
 
 void ASnakePawn::ResetSnake()
 {
-	FIntPoint SpawnCell;
+	FIntVector SpawnCell;
 
 	// Ask the Server GameMode for the next round-robin spot!
 	if (ASnakeGameMode* GM = Cast<ASnakeGameMode>(GetWorld()->GetAuthGameMode()))
@@ -579,16 +599,11 @@ void ASnakePawn::ResetSnake()
 	}
 	
 	CurrentGridLocation = SpawnCell;
-	PendingNextGridLocation = SpawnCell;
 
 	CurrentDirection = ESnakeDirection::Up;
 	RequestedDirection = ESnakeDirection::Up;
 	UpdateDirection(CurrentDirection);
 	
-	const FVector ResetLocation = GridToWorldLocation(CurrentGridLocation);
-	SetActorLocation(ResetLocation);
-	StepStartWorldLocation = ResetLocation;
-	StepTargetWorldLocation = ResetLocation;
 	MoveInterpolationProgress = 0.f;
 	BodyParts.Empty();
 	TArray<USceneComponent*> SnakeSplineChildren;
@@ -598,9 +613,13 @@ void ASnakePawn::ResetSnake()
 		if (SnakeSplineMeshComponent) SnakeSplineMeshComponent->DestroyComponent();
 	}
 	SnakeHistory.Empty();
-    SegmentLocations.Empty();
-    SegmentLocations.Add(ResetLocation);
-	SegmentLocations.Add(ResetLocation); // buffer extra slot just in case
+    SegmentGridLocations.Empty();
+    SegmentGridLocations.Add(CurrentGridLocation);
+	SegmentGridLocations.Add(CurrentGridLocation); // buffer extra slot just in case
+	if (HasAuthority() && GridGen)
+	{
+		GridGen->RegisterSnake(this, SegmentGridLocations);
+	}
 	SegmentCount = 0;
 	SplineMeshParts.Empty();
 	SnakeSpline->ClearSplinePoints(true);
@@ -618,25 +637,47 @@ void ASnakePawn::Client_ResetLogic_Implementation(FVector NewLoc)
 	// This clears the "stretching" spline on the client's screen
 }
 
-FIntPoint ASnakePawn::GetClampedStartGridPosition() const
+FIntVector ASnakePawn::GetClampedStartGridPosition() const
 {
-	return FIntPoint(
+	return FIntVector(
 		FMath::Clamp(0, 1, GridGen->Width - 2),
-		FMath::Clamp(0, 1, GridGen->Height - 2)
+		FMath::Clamp(0, 1, GridGen->Height - 2),
+		1
 	);
 }
 
-TArray<FIntPoint> ASnakePawn::GetOccupiedCells()
+FIntVector ASnakePawn::CalculateNextGridLocation(ESnakeDirection Dir) const
 {
-	TArray<FIntPoint> OccupiedCells;
-	for (const FVector& Loc : SegmentLocations)
+	FIntPoint Offset = DirectionToGridOffset(Dir);
+	int32 TargetX = CurrentGridLocation.X + Offset.X;
+	int32 TargetY = CurrentGridLocation.Y + Offset.Y;
+	int32 TargetZ = CurrentGridLocation.Z;
+
+	if (GridGen)
 	{
-		OccupiedCells.Add(FIntPoint(
-			FMath::RoundToInt(Loc.X / TileSize),
-			FMath::RoundToInt(Loc.Y / TileSize)
-		));
+		// Look at the entire column of blocks in front of the snake
+		for (int32 z = 0; z < GridGen->TotalLayers; z++)
+		{
+			int32 Idx = GridGen->GetIndex(TargetX, TargetY, z);
+			if (GridGen->GridData.IsValidIndex(Idx))
+			{
+				ECellType TargetCellType = GridGen->GridData[Idx].CellType;
+				
+				// If we are currently on the Ramp (Z=1), and the next tile is a Bridge (Z=2)
+				if (CurrentGridLocation.Z == 1 && TargetCellType == ECellType::Elevated) { TargetZ = 2; break; }
+				
+				// If we are on the Bridge (Z=2), and the next tile is a RampDown (Z=1)
+				if (CurrentGridLocation.Z == 2 && TargetCellType == ECellType::RampDown) { TargetZ = 1; break; }
+				
+				// If we are on the Main Floor (Z=1), and the next tile is a Hole (Z=0)
+				if (CurrentGridLocation.Z == 1 && TargetCellType == ECellType::Hole) { TargetZ = 0; break; }
+				
+				// If we are in a Tunnel (Z=0), and the next tile is a Hole going back up (Z=1)
+				if (CurrentGridLocation.Z == 0 && TargetCellType == ECellType::Hole) { TargetZ = 1; break; }
+			}
+		}
 	}
-	return OccupiedCells;
+	return FIntVector(TargetX, TargetY, TargetZ);
 }
 
 void ASnakePawn::DrawDebugInfo()

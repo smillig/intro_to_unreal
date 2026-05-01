@@ -38,10 +38,7 @@ public:
 	// Sets default values for this pawn's properties
 	ASnakePawn();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
+protected:	
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* CollisionComponent;
 	
@@ -106,14 +103,12 @@ protected:
 	
 	UPROPERTY()
 	AAGridGenerator* GridGen;
-	// Grid coordinates of snake
-	// might need to move or reference in grid for server auth
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake Logic")
-	TArray<FVector> SegmentLocations; 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake Logic")
+	
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Snake Logic")
 	int32 SegmentCount = 0;
 	
 	TArray<FVector> SnakeHistory;
+	UPROPERTY()
 	TArray<UStaticMeshComponent*> BodyParts;
 	float VerticalOffset = 65.0f;
 
@@ -125,8 +120,9 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentDirection();
 	ESnakeDirection RequestedDirection = ESnakeDirection::Up;
-	FIntPoint CurrentGridLocation = FIntPoint(0, 0);
-	FIntPoint PendingNextGridLocation = FIntPoint(0, 0);
+	int32 PendingGrowthAmount = 0;
+	FIntVector CurrentGridLocation = FIntVector(0, 0, 0);
+	FIntVector PendingNextGridLocation = FIntVector(0, 0, 0);
 	FVector StepStartWorldLocation = FVector::ZeroVector;
 	FVector StepTargetWorldLocation = FVector::ZeroVector;
 	FRotator HeadStartRotation;
@@ -135,9 +131,6 @@ protected:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	// replication
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-	
 	float MoveInterpolationProgress = 0.f;
 	bool bIsMovingToTarget = false;
 	bool bIsDead = false;
@@ -145,7 +138,9 @@ protected:
 
 	FVector GetVectorFromDirection(ESnakeDirection Direction) const;
 	FIntPoint DirectionToGridOffset(ESnakeDirection Direction) const;
-	FVector GridToWorldLocation(const FIntPoint& GridPosition) const;
+	FVector GridToWorldLocation(const FIntVector& GridPosition) const;
+	FIntVector WorldToGridLocation(const FVector& GridPosition) const;
+	FIntVector CalculateNextGridLocation(ESnakeDirection Dir) const;
 	
 	void Input_TryTurnUp(const FInputActionValue& Value);
 	void Input_TryTurnDown(const FInputActionValue& Value);
@@ -161,7 +156,7 @@ protected:
 	bool WouldHitWall(const FIntPoint& NextCell) const;
 	void ResetSnake();
 	
-	FIntPoint GetClampedStartGridPosition() const;
+	FIntVector GetClampedStartGridPosition() const;
 	void GridMove(const float DeltaTime);
 	void UpdateSplineVisuals();
 	void CheckLayerTransition(int32 TargetX, int32 TargetY);
@@ -169,8 +164,15 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 	
-	TArray<FIntPoint> GetOccupiedCells();
+	// replication
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	// Grid coordinates of snake
+	// might need to move or reference in grid for server auth
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Snake Logic")
+	TArray<FIntVector> SegmentGridLocations; 
 	
 	UPROPERTY(Replicated, BlueprintReadWrite,  Category = "Snake Logic")
 	float MoveIntervalAdjustment = 0.0f;

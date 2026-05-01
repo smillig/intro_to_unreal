@@ -39,6 +39,9 @@ public:
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnFoodEatenSignature OnFoodEaten;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Food Properties")
+	FIntVector GridLocation;
 
 protected:
 	// Called when the game starts or when spawned

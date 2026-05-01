@@ -3,6 +3,7 @@
 
 #include "AGridGenerator.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "SnakePawn.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -97,7 +98,7 @@ void AAGridGenerator::GenerateGrid()
 	{
 		for (int32 x = 0; x < Width; x++)
 		{
-			GridData[GetIndex(x, y, 0)].CellType = ECellType::Flat;
+			GridData[GetIndex(x, y, 1)].CellType = ECellType::Flat;
 		}
 	}
 	// Randomly place Features
@@ -158,9 +159,9 @@ void AAGridGenerator::TryPlaceBridge(FRandomStream& Stream)
 
 	// Decide Lenght according to settings
 	int32 MidLength = 1;
-	if (BridgeLength == EfeaturLength::Short) MidLength = Stream.RandRange(1, 3);
-	else if (BridgeLength == EfeaturLength::Medium) MidLength = Stream.RandRange(3, 5);
-	else if (BridgeLength == EfeaturLength::Long) MidLength = Stream.RandRange(5, 10);
+	if (BridgeLength == EFeatureLength::Short) MidLength = Stream.RandRange(1, 3);
+	else if (BridgeLength == EFeatureLength::Medium) MidLength = Stream.RandRange(3, 5);
+	else if (BridgeLength == EFeatureLength::Long) MidLength = Stream.RandRange(5, 10);
 
 	// Check if path is clear
 	for (int i = 0; i < MidLength + 2; i++)
@@ -200,26 +201,6 @@ void AAGridGenerator::ClearGrid()
 	BridgeISMC->ClearInstances();
 	TunnelISMC->ClearInstances();
 	GridData.Empty();
-}
-
-TArray<FIntPoint> AAGridGenerator::GetWalkableCells(int32 Layer) const
-{
-	TArray<FIntPoint> WalkableCells;
-	for (int32 y = 0; y < Height; y++)
-	{
-		for (int32 x = 0; x < Width; x++)
-		{
-			int32 CurIndex = GetIndex(x, y, Layer);
-			if (GridData.IsValidIndex(CurIndex))
-			{
-				if (GridData[CurIndex].CellType == ECellType::Flat || GridData[CurIndex].CellType == ECellType::Elevated)
-				{
-					WalkableCells.Add(FIntPoint(x, y));
-				}
-			}
-		}
-	}
-	return WalkableCells;
 }
 
 void AAGridGenerator::WrapWalls()
@@ -288,4 +269,132 @@ void AAGridGenerator::WrapWalls()
 			}
 		}
 	}
+}
+
+void AAGridGenerator::RegisterSnake(ASnakePawn* Snake, const TArray<FIntVector>& InitialSegments)
+{
+	for (const FIntVector& Seg : InitialSegments)
+	{
+		FGridOccupancy& Cell = OccupancyMap.FindOrAdd(Seg);
+		Cell.Type = EOccupierType::SnakeBody;
+		Cell.OccupierActor = Snake;
+	}
+}
+
+FGridMoveResult AAGridGenerator::RequestMove(ASnakePawn* Snake, FIntVector NewHeadPos, FIntVector OldTailPos, bool bIsGrowing)
+{
+	FGridMoveResult Result;
+
+	// 1. Check Terrain (Bounds/Walls)
+	if (!IsTerrainWalkable(NewHeadPos)) 
+	{
+		Result.HitType = EOccupierType::Obstacle;
+		return Result;
+	}
+
+	// 2. Check Dynamic Occupancy (Other Snakes / Food)
+	FGridOccupancy* TargetCell = OccupancyMap.Find(NewHeadPos);
+	if (TargetCell && TargetCell->Type != EOccupierType::None)
+	{
+		Result.HitType = TargetCell->Type;
+		Result.HitActor = TargetCell->OccupierActor;
+
+		if (Result.HitType == EOccupierType::SnakeBody || Result.HitType == EOccupierType::Obstacle)
+		{
+			return Result; // Move blocked!
+		}
+	}
+
+	// 3. Apply the move (Atomic Transaction)
+	FGridOccupancy& NewHead = OccupancyMap.FindOrAdd(NewHeadPos);
+	NewHead.Type = EOccupierType::SnakeBody;
+	NewHead.OccupierActor = Snake;
+
+	if (!bIsGrowing)
+	{
+		ClearCell(OldTailPos);
+	}
+
+	return Result; // Return Success or Food
+}
+
+bool AAGridGenerator::TryClaimCell(FIntVector CellLocation, AActor* Requestor, EOccupierType OccupierType)
+{
+	FGridOccupancy& Cell = OccupancyMap.FindOrAdd(CellLocation);
+	Cell.Type = OccupierType;
+	Cell.OccupierActor = Requestor;
+	return true;
+}
+
+void AAGridGenerator::ClearCell(FIntVector CellLocation)
+{
+	if (FGridOccupancy* Cell = OccupancyMap.Find(CellLocation))
+	{
+		Cell->Type = EOccupierType::None;
+		Cell->OccupierActor = nullptr;
+	}
+}
+
+TArray<FIntVector> AAGridGenerator::GetAllEmptyCells()
+{
+	TArray<FIntVector> EmptyCells;
+	// Only return ground (0) and elevated (2) layers for food, 
+	// assuming 0 in your old logic was main floor. Adjust if layer 1 is mid.
+	for (int32 z = 1; z < TotalLayers; z++)
+	{
+		for (int32 y = 0; y < Height; y++)
+		{
+			for (int32 x = 0; x < Width; x++)
+			{
+				FIntVector CellPos(x, y, z);
+				if (IsTerrainWalkable(CellPos))
+				{
+					FGridOccupancy* Cell = OccupancyMap.Find(CellPos);
+					if (!Cell || Cell->Type == EOccupierType::None)
+					{
+						// Prevent food from spawning ON the sloped ramps
+						int32 Idx = GetIndex(x, y, z);
+						if (GridData[Idx].CellType != ECellType::RampUp && GridData[Idx].CellType != ECellType::RampDown)
+						{
+							EmptyCells.Add(CellPos);
+						}
+					}
+				}
+			}
+		}
+	}
+	return EmptyCells;
+}
+
+bool AAGridGenerator::IsTerrainWalkable(FIntVector Location) const
+{
+	if (!IsInBounds(Location.X, Location.Y)) return false;
+
+	int32 Idx = GetIndex(Location.X, Location.Y, Location.Z);
+	if (!GridData.IsValidIndex(Idx)) return false;
+
+	ECellType T = GridData[Idx].CellType;
+	return (T != ECellType::Blocked && T != ECellType::Empty);
+}
+
+FVector AAGridGenerator::GridToWorld(FIntVector GridLocation) const
+{
+	float TargetZ = 0.0f;
+	int32 Idx = GetIndex(GridLocation.X, GridLocation.Y, GridLocation.Z);
+	if (GridData.IsValidIndex(Idx))
+	{
+		TargetZ = GridData[Idx].ZOffset;
+	}
+	return FVector(GridLocation.X * TileSize, GridLocation.Y * TileSize, TargetZ);
+}
+
+FIntVector AAGridGenerator::WorldToGridLocation(const FVector& WorldPosition) const
+{
+	// Convert World Units (e.g. 500.0f) to Grid Units (e.g. 5)
+	int32 GridX = FMath::RoundToInt(WorldPosition.X / TileSize);
+	int32 GridY = FMath::RoundToInt(WorldPosition.Y / TileSize);
+	int32 GridZ = FMath::RoundToInt(WorldPosition.Z / TileSize);
+	
+	// Z layer relies on the current layer tracker 
+	return FIntVector(GridX, GridY, GridZ);
 }
